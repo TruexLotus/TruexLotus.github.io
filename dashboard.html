@@ -20,14 +20,25 @@ body{
   font-family:'Kanit','Noto Sans Thai',sans-serif;
   background:var(--bg); color:var(--ink);
   font-size:14px; line-height:1.5;
-  padding-bottom:80px;
+  padding-bottom:34px;
 }
 
 /* ---------- Header ---------- */
 header{
+  position:relative;
   background:linear-gradient(135deg,var(--true-red),var(--true-red-dark));
   color:#fff; padding:16px 16px 20px; border-radius:0 0 18px 18px;
 }
+.refresh-btn{
+  position:absolute; top:16px; right:14px;
+  width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,.35); border-radius:50%;
+  background:rgba(255,255,255,.14); color:#fff; font-size:15px;
+  cursor:pointer; padding:0; line-height:1;
+}
+.refresh-btn:active{background:rgba(255,255,255,.3);}
+.refresh-btn.spin{animation:spin .9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 .brand{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
 .brand .t{font-weight:700; font-size:15px; letter-spacing:.3px;}
 .brand .x{opacity:.7; font-size:12px;}
@@ -110,17 +121,13 @@ tr:last-child td{border-bottom:none;}
   margin-top:12px; font-family:inherit; font-size:13px; font-weight:600; padding:9px 18px;
   border:none; border-radius:10px; background:var(--true-red); color:#fff; cursor:pointer;
 }
-.refresh{
-  display:block; width:100%; margin:4px 0 20px; font-family:inherit; font-size:12.5px;
-  padding:10px; border:1.5px solid var(--line); border-radius:11px; background:var(--card);
-  color:var(--muted); cursor:pointer;
-}
 .empty{text-align:center; color:var(--muted); font-size:12px; padding:16px 0;}
 </style>
 </head>
 <body>
 
 <header>
+  <button class="refresh-btn" id="refresh-btn" onclick="load(true)" title="ดึงข้อมูลล่าสุดจากชีต" aria-label="ดึงข้อมูลล่าสุดจากชีต">⟳</button>
   <div class="brand"><span class="t">true</span><span class="x">&times;</span><span class="l">Lotus's</span></div>
   <h1>แดชบอร์ด Lead</h1>
   <div class="updated" id="updated">กำลังโหลด...</div>
@@ -229,8 +236,6 @@ tr:last-child td{border-bottom:none;}
         </table>
       </div>
     </section>
-
-    <button class="refresh" onclick="load(true)">🔄 ดึงข้อมูลล่าสุดจากชีต</button>
   </div>
 </main>
 
@@ -257,6 +262,8 @@ let DATA = null;
 
 // ================= โหลดข้อมูล =================
 async function load(fresh){
+  const btn = document.getElementById('refresh-btn');
+  if(btn) btn.classList.add('spin');
   show('loading');
   try{
     const url = GAS_URL + '?action=dashboard' + (fresh ? '&fresh=1' : '');
@@ -270,6 +277,8 @@ async function load(fresh){
   }catch(err){
     document.getElementById('error-msg').textContent = 'เชื่อมต่อไม่สำเร็จ · ' + (err.message || 'ตรวจสอบอินเทอร์เน็ต');
     show('error');
+  }finally{
+    if(btn) btn.classList.remove('spin');
   }
 }
 
