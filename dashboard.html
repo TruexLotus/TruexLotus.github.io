@@ -184,9 +184,9 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="card">
-        <h2>ปิดเน็ตทรูได้ · แยกตามพื้นที่ดูแล</h2>
-        <div class="sub">พื้นที่ดูแลมาจากชีต Staff · ตัวเลขขวาคือจำนวนที่ปิดได้</div>
-        <div id="t-areas"></div>
+        <h2>ปิดเน็ตทรูได้ · แยกตามจังหวัด</h2>
+        <div class="sub">แสดง 8 จังหวัดที่ปิดได้มากที่สุด · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของจังหวัดนั้น</div>
+        <div id="t-provs"></div>
       </div>
 
       <div class="card">
@@ -396,35 +396,37 @@ function renderTrue(rows){
   setNum('t-closed', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
   setNum('t-wait', count(rows, r=>r[C_TRUE]==='รอตัดสินใจเน็ตทรู'), 'ราย');
 
-  // ---- ปิดเน็ตทรูได้ แยกตามพื้นที่ดูแล ----
-  const byArea = {};
+  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามจังหวัด ----
+  const byProv = {};
   rows.forEach(r=>{
     if(r[C_SALE]<0) return;
-    const area = (DATA.sales[r[C_SALE]].p || '').trim() || 'ไม่ระบุพื้นที่';
-    if(!byArea[area]) byArea[area] = {leads:0, closed:0};
-    byArea[area].leads++;
-    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byArea[area].closed++;
+    const p = provinceOf(DATA.sales[r[C_SALE]].p);
+    if(!byProv[p]) byProv[p] = {leads:0, closed:0};
+    byProv[p].leads++;
+    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byProv[p].closed++;
   });
-  const areas = Object.entries(byArea).sort((a,b)=>
-    b[1].closed - a[1].closed || b[1].leads - a[1].leads);
-  const amax = Math.max(1, ...areas.map(a=>a[1].closed));
-  const anyClosed = areas.some(a=>a[1].closed>0);
 
-  document.getElementById('t-areas').innerHTML = areas.length ? (areas.map(([name,v])=>`
-    <div class="row" style="align-items:flex-start;">
-      <div class="nm" style="width:104px;" title="${esc(name)}">
-        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(shortArea(name))}</div>
-        <div style="font-size:9.5px; color:var(--muted);">จาก ${v.leads} Lead</div>
-      </div>
-      <div class="track" style="margin-top:2px;">
-        <div style="width:${anyClosed ? (v.closed/amax)*100 : 0}%; background:#1D9E75;"></div>
-      </div>
-      <div class="v" style="margin-top:2px; ${v.closed?'font-weight:600; color:var(--lotus-green);':''}">${v.closed}</div>
-    </div>`).join('') + (anyClosed ? '' :
-      '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>'))
-    : '<div class="empty">ไม่มีข้อมูล</div>';
+  // เอาเฉพาะจังหวัดที่ปิดได้จริง เรียงมากไปน้อย สูงสุด 8 แท่งให้พอดีจอมือถือ
+  const provs = Object.entries(byProv)
+    .filter(([,v]) => v.closed > 0)
+    .sort((a,b) => b[1].closed - a[1].closed)
+    .slice(0, 8);
+  const pmax = Math.max(1, ...provs.map(p=>p[1].closed));
 
-  // ---- ตารางอันดับเซล ----
+  document.getElementById('t-provs').innerHTML = provs.length ? `
+    <div class="wkchart" style="height:104px;">
+      ${provs.map(([name,v])=>`
+        <div class="wkcol">
+          <div class="n" style="color:var(--lotus-green); font-weight:600;">${v.closed}</div>
+          <div class="bar" style="height:${(v.closed/pmax)*80}%; background:#1D9E75;"></div>
+        </div>`).join('')}
+    </div>
+    <div class="wklabels">
+      ${provs.map(([name,v])=>`<div>${esc(name)}<br><span style="opacity:.65">จาก ${v.leads}</span></div>`).join('')}
+    </div>`
+    : '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>';
+
+  // ---- ตารางอันดับเซล (แสดง 10 อันดับแรก) ----
   const by = {};
   rows.forEach(r=>{
     if(r[C_SALE]<0) return;
@@ -433,11 +435,12 @@ function renderTrue(rows){
     if(r[C_TRUE]==='ปิดเน็ตทรูได้') by[r[C_SALE]].trueClosed++;
   });
   const list = Object.entries(by).sort((a,b)=>b[1].leads-a[1].leads);
-  const top5 = list.slice(0,5).reduce((s,x)=>s+x[1].leads,0);
+  const top10 = list.slice(0,10);
+  const top5sum = list.slice(0,5).reduce((s,x)=>s+x[1].leads,0);
   document.getElementById('t-share').textContent =
-    rows.length ? `Top 5 คิดเป็น ${Math.round(top5/rows.length*100)}% ของ Lead ทั้งหมด · รวม ${list.length} คน` : '';
+    rows.length ? `Top 5 คิดเป็น ${Math.round(top5sum/rows.length*100)}% ของ Lead ทั้งหมด · เซลทั้งหมด ${list.length} คน` : '';
 
-  document.getElementById('t-table').innerHTML = list.map(([si,v],i)=>{
+  document.getElementById('t-table').innerHTML = top10.map(([si,v],i)=>{
     const s = DATA.sales[si];
     return `<tr>
       <td class="rank">${i+1}</td>
@@ -517,21 +520,48 @@ function weekRange(w){
 function shortBranch(n){
   return String(n||'').replace('โลตัส โกเฟรช ซูเปอร์มาร์เก็ต ','').replace('โลตัส โกเฟรช ','').trim() || 'ไม่ระบุ';
 }
-// ย่อชื่อพื้นที่ดูแลให้พอดีจอมือถือ
-// "CHIANG RAI, PHAYAO" -> "Chiang Rai +1"
-// "BKK : Prawet, Bang Kapi, Saphan Sung" -> "BKK: Prawet +2"
-function shortArea(name){
-  let s = String(name||'').trim();
-  if(!s) return 'ไม่ระบุพื้นที่';
-  let prefix = '';
-  if(s.includes(':')){
-    const parts = s.split(':');
-    prefix = parts[0].trim() + ': ';
-    s = parts.slice(1).join(':').trim();
+// แปลงพื้นที่ดูแลในชีต Staff เป็นชื่อจังหวัดไทย
+// ชีตเก็บเป็นเขตดูแล เช่น "CHIANG RAI, PHAYAO" หรือ "BKK : Prawet, Bang Kapi"
+// เราเอาจังหวัดตัวแรกเป็นตัวแทน แล้วรวมยอดของเขตที่อยู่จังหวัดเดียวกันเข้าด้วยกัน
+const PROVINCE_TH = {
+  'BKK':'กรุงเทพฯ','NTB':'นนทบุรี','PTT':'ปทุมธานี','SMP':'สมุทรปราการ',
+  'ANG THONG':'อ่างทอง','SARABURI':'สระบุรี','BUENG KAN':'บึงกาฬ','NONG KHAI':'หนองคาย',
+  'BURI RAM':'บุรีรัมย์','CHACHOENGSAO':'ฉะเชิงเทรา','NAKHON NAYOK':'นครนายก',
+  'CHAI NAT':'ชัยนาท','SING BURI':'สิงห์บุรี','LOP BURI':'ลพบุรี',
+  'CHAIYAPHUM':'ชัยภูมิ','LOEI':'เลย','CHANTHABURI':'จันทบุรี','TRAT':'ตราด',
+  'CHIANG MAI':'เชียงใหม่','MAE HONG SON':'แม่ฮ่องสอน','CHIANG RAI':'เชียงราย','PHAYAO':'พะเยา',
+  'CHON BURI':'ชลบุรี','KALASIN':'กาฬสินธุ์','MUKDAHAN':'มุกดาหาร',
+  'KAMPHAENG PHET':'กำแพงเพชร','SUKHOTHAI':'สุโขทัย','KANCHANABURI':'กาญจนบุรี','SUPHAN BURI':'สุพรรณบุรี',
+  'KHON KAEN':'ขอนแก่น','KRABI':'กระบี่','PHANGNGA':'พังงา','PHANG NGA':'พังงา',
+  'LAMPANG':'ลำปาง','LAMPHUN':'ลำพูน','MAHA SARAKHAM':'มหาสารคาม','ROI ET':'ร้อยเอ็ด',
+  'NAKHON PATHOM':'นครปฐม','NAKHON RATCHASIMA':'นครราชสีมา','NAKHON SAWAN':'นครสวรรค์',
+  'UTHAI THANI':'อุทัยธานี','NAKHON SI THAMMARAT':'นครศรีฯ','NAN':'น่าน','PHRAE':'แพร่',
+  'PATTANI':'ปัตตานี','YALA':'ยะลา','NARATHIWAT':'นราธิวาส',
+  'PHETCHABUN':'เพชรบูรณ์','PHICHIT':'พิจิตร','PHITSANULOK':'พิษณุโลก','UTTARADIT':'อุตรดิตถ์',
+  'PHRA NAKHON SI AYUTTHAYA':'อยุธยา','PHUKET':'ภูเก็ต',
+  'PRACHUAP KHIRI KHAN':'ประจวบฯ','PHETCHABURI':'เพชรบุรี',
+  'RANONG':'ระนอง','CHUMPHON':'ชุมพร','RATCHABURI':'ราชบุรี','SAMUT SONGKHRAM':'สมุทรสงคราม',
+  'RAYONG':'ระยอง','SA KAEO':'สระแก้ว','PRACHIN BURI':'ปราจีนบุรี',
+  'SAKON NAKHON':'สกลนคร','NAKHON PHANOM':'นครพนม','SAMUT SAKHON':'สมุทรสาคร',
+  'SONGKHLA':'สงขลา','SURAT THANI':'สุราษฎร์ฯ','SURIN':'สุรินทร์','SI SA KET':'ศรีสะเกษ',
+  'TAK':'ตาก','TRANG':'ตรัง','SATUN':'สตูล','PHATTHALUNG':'พัทลุง',
+  'UBON RATCHATHANI':'อุบลฯ','UDON THANI':'อุดรธานี','NONG BUA LAM PHU':'หนองบัวลำภู',
+  'YASOTHON':'ยโสธร','AMNAT CHAROEN':'อำนาจเจริญ',
+  'HEAD OFFICE':'ส่วนกลาง'
+};
+
+// คืนชื่อจังหวัดไทยจากข้อความเขตดูแล
+function provinceOf(area){
+  const raw = String(area||'').trim();
+  if(!raw) return 'ไม่ระบุ';
+  // รูปแบบ "BKK : ..." ใช้ตัวย่อหน้าเครื่องหมาย :
+  if(raw.includes(':')){
+    const key = raw.split(':')[0].trim().toUpperCase();
+    return PROVINCE_TH[key] || key;
   }
-  const items = s.split(',').map(x=>x.trim()).filter(Boolean);
-  const head = titleCase(items[0] || s);
-  return prefix + head + (items.length > 1 ? ' +' + (items.length-1) : '');
+  // เอาจังหวัดตัวแรกก่อนคอมมา แล้วตัดเลขท้าย เช่น "CHIANG MAI 1" -> "CHIANG MAI"
+  const first = raw.split(',')[0].trim().replace(/\s+\d+$/,'').toUpperCase();
+  return PROVINCE_TH[first] || titleCase(first);
 }
 function titleCase(s){
   return String(s).toLowerCase().replace(/\b[a-z]/g, c=>c.toUpperCase());
