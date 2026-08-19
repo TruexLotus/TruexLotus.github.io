@@ -156,7 +156,7 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="kpi warn" style="margin-bottom:12px;">
-        <div class="lbl">⏱ ค้างสถานะรอโทรเกิน 3 วัน</div>
+        <div class="lbl">⏱ ค้างรอติดต่อเกิน 3 วัน</div>
         <div class="val" id="o-sla">0 <span class="unit" style="color:inherit;">ราย</span></div>
       </div>
 
@@ -201,8 +201,8 @@ tr:last-child td{border-bottom:none;}
       <div class="kpis">
         <div class="kpi"><div class="lbl">ติดต่อแล้ว</div><div class="val" id="l-contacted">0 <span class="unit">ราย</span></div></div>
         <div class="kpi green"><div class="lbl">ปิดการขายได้</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">ค้างยังไม่ติดต่อ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi warn"><div class="lbl">หลุด SLA เกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">ค้างรอติดต่อ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi warn"><div class="lbl">ค้างรอติดต่อเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
       </div>
 
       <div class="card">
@@ -217,7 +217,7 @@ tr:last-child td{border-bottom:none;}
         <table>
           <thead><tr>
             <th>สาขา</th><th style="width:34px;">Lead</th>
-            <th style="width:38px;">ติดต่อ</th><th style="width:34px;">ค้าง</th><th style="width:40px;">หลุด SLA</th>
+            <th style="width:38px;">ติดต่อ<br>แล้ว</th><th style="width:34px;">ค้างรอ<br>ติดต่อ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
           </tr></thead>
           <tbody id="l-table"></tbody>
         </table>
@@ -241,6 +241,11 @@ const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 
 // ดัชนีของ rows ที่ backend ส่งมา
 const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6;
+
+// สถานะที่ถือว่า "ยังไม่ได้ติดต่อ" — รับได้ทั้งคำเก่าและคำใหม่
+// เผื่อวันหน้าเปลี่ยน dropdown ในชีตเป็น "รอติดต่อ" แดชบอร์ดจะยังนับถูกทันที ไม่ต้องแก้โค้ด
+const PENDING_STATUSES = ['รอโทร','รอติดต่อ'];
+const isPending = st => PENDING_STATUSES.indexOf(st) !== -1;
 
 let DATA = null;
 
@@ -413,9 +418,9 @@ function renderTrue(rows){
 
 // ---------- หน้า 3 ----------
 function renderLotus(rows){
-  const contacted = count(rows, r=>r[C_STATUS]!=='รอโทร');
+  const contacted = count(rows, r=>!isPending(r[C_STATUS]));
   const closed = count(rows, r=>r[C_STATUS]==='ปิดการขายสำเร็จ');
-  const pending = count(rows, r=>r[C_STATUS]==='รอโทร');
+  const pending = count(rows, r=>isPending(r[C_STATUS]));
   const sla = count(rows, isSla);
 
   setNum('l-contacted', contacted, 'ราย');
@@ -430,16 +435,16 @@ function renderLotus(rows){
     <div style="width:${other/tot*100}%; background:#B4B2A9;"></div>
     <div style="width:${pending/tot*100}%; background:#E0A020;"></div>`;
   document.getElementById('l-legend').innerHTML = `
-    <div><span style="background:#1D9E75"></span>ปิดได้ ${closed}</div>
+    <div><span style="background:#1D9E75"></span>ปิดการขายได้ ${closed}</div>
     <div><span style="background:#B4B2A9"></span>ติดต่อแล้วไม่ปิด ${other}</div>
-    <div><span style="background:#E0A020"></span>ค้าง ${pending}</div>`;
+    <div><span style="background:#E0A020"></span>ค้างรอติดต่อ ${pending}</div>`;
 
   const by = {};
   rows.forEach(r=>{
     const b = r[C_BRANCH];
     if(!by[b]) by[b] = {total:0, contacted:0, pending:0, sla:0};
     by[b].total++;
-    if(r[C_STATUS]!=='รอโทร') by[b].contacted++; else by[b].pending++;
+    if(!isPending(r[C_STATUS])) by[b].contacted++; else by[b].pending++;
     if(isSla(r)) by[b].sla++;
   });
 
@@ -449,7 +454,7 @@ function renderLotus(rows){
       return `<tr>
         <td>
           <div class="nm2">${esc(shortBranch(DATA.branches[bi]))}</div>
-          <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ติดต่อ ${pct}%</div>
+          <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ติดต่อแล้ว ${pct}%</div>
         </td>
         <td>${v.total}</td>
         <td>${v.contacted}</td>
@@ -460,7 +465,7 @@ function renderLotus(rows){
 }
 
 // ================= ตัวช่วย =================
-function isSla(r){ return r[C_STATUS]==='รอโทร' && r[C_AGE] > SLA_DAYS; }
+function isSla(r){ return isPending(r[C_STATUS]) && r[C_AGE] > SLA_DAYS; }
 function count(rows, fn){ return rows.filter(fn).length; }
 function sum(rows, fn){ return rows.reduce((s,r)=>s+(fn(r)||0),0); }
 function set(id, v){ document.getElementById(id).textContent = v; }
