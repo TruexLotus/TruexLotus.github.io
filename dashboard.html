@@ -184,6 +184,12 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="card">
+        <h2>ปิดเน็ตทรูได้ · แยกตามพื้นที่ดูแล</h2>
+        <div class="sub">พื้นที่ดูแลมาจากชีต Staff · ตัวเลขขวาคือจำนวนที่ปิดได้</div>
+        <div id="t-areas"></div>
+      </div>
+
+      <div class="card">
         <h2>อันดับเซล · เก็บ Lead มากที่สุด</h2>
         <div class="sub" id="t-share"></div>
         <table>
@@ -390,6 +396,35 @@ function renderTrue(rows){
   setNum('t-closed', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
   setNum('t-wait', count(rows, r=>r[C_TRUE]==='รอตัดสินใจเน็ตทรู'), 'ราย');
 
+  // ---- ปิดเน็ตทรูได้ แยกตามพื้นที่ดูแล ----
+  const byArea = {};
+  rows.forEach(r=>{
+    if(r[C_SALE]<0) return;
+    const area = (DATA.sales[r[C_SALE]].p || '').trim() || 'ไม่ระบุพื้นที่';
+    if(!byArea[area]) byArea[area] = {leads:0, closed:0};
+    byArea[area].leads++;
+    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byArea[area].closed++;
+  });
+  const areas = Object.entries(byArea).sort((a,b)=>
+    b[1].closed - a[1].closed || b[1].leads - a[1].leads);
+  const amax = Math.max(1, ...areas.map(a=>a[1].closed));
+  const anyClosed = areas.some(a=>a[1].closed>0);
+
+  document.getElementById('t-areas').innerHTML = areas.length ? (areas.map(([name,v])=>`
+    <div class="row" style="align-items:flex-start;">
+      <div class="nm" style="width:104px;" title="${esc(name)}">
+        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(shortArea(name))}</div>
+        <div style="font-size:9.5px; color:var(--muted);">จาก ${v.leads} Lead</div>
+      </div>
+      <div class="track" style="margin-top:2px;">
+        <div style="width:${anyClosed ? (v.closed/amax)*100 : 0}%; background:#1D9E75;"></div>
+      </div>
+      <div class="v" style="margin-top:2px; ${v.closed?'font-weight:600; color:var(--lotus-green);':''}">${v.closed}</div>
+    </div>`).join('') + (anyClosed ? '' :
+      '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>'))
+    : '<div class="empty">ไม่มีข้อมูล</div>';
+
+  // ---- ตารางอันดับเซล ----
   const by = {};
   rows.forEach(r=>{
     if(r[C_SALE]<0) return;
@@ -482,6 +517,26 @@ function weekRange(w){
 function shortBranch(n){
   return String(n||'').replace('โลตัส โกเฟรช ซูเปอร์มาร์เก็ต ','').replace('โลตัส โกเฟรช ','').trim() || 'ไม่ระบุ';
 }
+// ย่อชื่อพื้นที่ดูแลให้พอดีจอมือถือ
+// "CHIANG RAI, PHAYAO" -> "Chiang Rai +1"
+// "BKK : Prawet, Bang Kapi, Saphan Sung" -> "BKK: Prawet +2"
+function shortArea(name){
+  let s = String(name||'').trim();
+  if(!s) return 'ไม่ระบุพื้นที่';
+  let prefix = '';
+  if(s.includes(':')){
+    const parts = s.split(':');
+    prefix = parts[0].trim() + ': ';
+    s = parts.slice(1).join(':').trim();
+  }
+  const items = s.split(',').map(x=>x.trim()).filter(Boolean);
+  const head = titleCase(items[0] || s);
+  return prefix + head + (items.length > 1 ? ' +' + (items.length-1) : '');
+}
+function titleCase(s){
+  return String(s).toLowerCase().replace(/\b[a-z]/g, c=>c.toUpperCase());
+}
+
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ================= แท็บ =================
