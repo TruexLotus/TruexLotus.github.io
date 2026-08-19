@@ -184,8 +184,8 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="card">
-        <h2>ปิดเน็ตทรูได้ · แยกตามจังหวัด</h2>
-        <div class="sub">แสดง 8 จังหวัดที่ปิดได้มากที่สุด · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของจังหวัดนั้น</div>
+        <h2>ปิดเน็ตทรูได้ · แยกตามสาขาโลตัส</h2>
+        <div class="sub">เซลทรูที่ประจำหน้าสาขานี้ ปิดเน็ตทรูได้กี่ราย · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสาขา</div>
         <div id="t-provs"></div>
       </div>
 
@@ -396,35 +396,35 @@ function renderTrue(rows){
   setNum('t-closed', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
   setNum('t-wait', count(rows, r=>r[C_TRUE]==='รอตัดสินใจเน็ตทรู'), 'ราย');
 
-  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามจังหวัด ----
-  const byProv = {};
+  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามสาขาโลตัส ----
+  // ใช้ BranchName ที่อยู่ในชีตเดียวกับ TrueStatus จึงไม่ต้องจับคู่ข้ามชีต
+  const byBr = {};
   rows.forEach(r=>{
-    if(r[C_SALE]<0) return;
-    const p = provinceOf(DATA.sales[r[C_SALE]].p);
-    if(!byProv[p]) byProv[p] = {leads:0, closed:0};
-    byProv[p].leads++;
-    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byProv[p].closed++;
+    const b = r[C_BRANCH];
+    if(!byBr[b]) byBr[b] = {leads:0, closed:0};
+    byBr[b].leads++;
+    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byBr[b].closed++;
   });
 
-  // เอาเฉพาะจังหวัดที่ปิดได้จริง เรียงมากไปน้อย สูงสุด 8 แท่งให้พอดีจอมือถือ
-  const provs = Object.entries(byProv)
-    .filter(([,v]) => v.closed > 0)
-    .sort((a,b) => b[1].closed - a[1].closed)
+  // เรียงจากปิดได้มากไปน้อย แสดงสูงสุด 8 สาขาให้พอดีจอมือถือ
+  const brs = Object.entries(byBr)
+    .sort((a,b) => b[1].closed - a[1].closed || b[1].leads - a[1].leads)
     .slice(0, 8);
-  const pmax = Math.max(1, ...provs.map(p=>p[1].closed));
+  const bcmax = Math.max(1, ...brs.map(b=>b[1].closed));
+  const anyClosed = brs.some(b=>b[1].closed > 0);
 
-  document.getElementById('t-provs').innerHTML = provs.length ? `
+  document.getElementById('t-provs').innerHTML = brs.length ? `
     <div class="wkchart" style="height:104px;">
-      ${provs.map(([name,v])=>`
+      ${brs.map(([bi,v])=>`
         <div class="wkcol">
-          <div class="n" style="color:var(--lotus-green); font-weight:600;">${v.closed}</div>
-          <div class="bar" style="height:${(v.closed/pmax)*80}%; background:#1D9E75;"></div>
+          <div class="n" style="${v.closed?'color:var(--lotus-green); font-weight:600;':''}">${v.closed}</div>
+          <div class="bar" style="height:${anyClosed ? (v.closed/bcmax)*80 : 0}%; background:#1D9E75;"></div>
         </div>`).join('')}
     </div>
     <div class="wklabels">
-      ${provs.map(([name,v])=>`<div>${esc(name)}<br><span style="opacity:.65">จาก ${v.leads}</span></div>`).join('')}
-    </div>`
-    : '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>';
+      ${brs.map(([bi,v])=>`<div>${esc(shortBranch(DATA.branches[bi]))}<br><span style="opacity:.65">จาก ${v.leads}</span></div>`).join('')}
+    </div>` + (anyClosed ? '' : '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>')
+    : '<div class="empty">ไม่มีข้อมูล</div>';
 
   // ---- ตารางอันดับเซล (แสดง 10 อันดับแรก) ----
   const by = {};
@@ -520,53 +520,6 @@ function weekRange(w){
 function shortBranch(n){
   return String(n||'').replace('โลตัส โกเฟรช ซูเปอร์มาร์เก็ต ','').replace('โลตัส โกเฟรช ','').trim() || 'ไม่ระบุ';
 }
-// แปลงพื้นที่ดูแลในชีต Staff เป็นชื่อจังหวัดไทย
-// ชีตเก็บเป็นเขตดูแล เช่น "CHIANG RAI, PHAYAO" หรือ "BKK : Prawet, Bang Kapi"
-// เราเอาจังหวัดตัวแรกเป็นตัวแทน แล้วรวมยอดของเขตที่อยู่จังหวัดเดียวกันเข้าด้วยกัน
-const PROVINCE_TH = {
-  'BKK':'กรุงเทพฯ','NTB':'นนทบุรี','PTT':'ปทุมธานี','SMP':'สมุทรปราการ',
-  'ANG THONG':'อ่างทอง','SARABURI':'สระบุรี','BUENG KAN':'บึงกาฬ','NONG KHAI':'หนองคาย',
-  'BURI RAM':'บุรีรัมย์','CHACHOENGSAO':'ฉะเชิงเทรา','NAKHON NAYOK':'นครนายก',
-  'CHAI NAT':'ชัยนาท','SING BURI':'สิงห์บุรี','LOP BURI':'ลพบุรี',
-  'CHAIYAPHUM':'ชัยภูมิ','LOEI':'เลย','CHANTHABURI':'จันทบุรี','TRAT':'ตราด',
-  'CHIANG MAI':'เชียงใหม่','MAE HONG SON':'แม่ฮ่องสอน','CHIANG RAI':'เชียงราย','PHAYAO':'พะเยา',
-  'CHON BURI':'ชลบุรี','KALASIN':'กาฬสินธุ์','MUKDAHAN':'มุกดาหาร',
-  'KAMPHAENG PHET':'กำแพงเพชร','SUKHOTHAI':'สุโขทัย','KANCHANABURI':'กาญจนบุรี','SUPHAN BURI':'สุพรรณบุรี',
-  'KHON KAEN':'ขอนแก่น','KRABI':'กระบี่','PHANGNGA':'พังงา','PHANG NGA':'พังงา',
-  'LAMPANG':'ลำปาง','LAMPHUN':'ลำพูน','MAHA SARAKHAM':'มหาสารคาม','ROI ET':'ร้อยเอ็ด',
-  'NAKHON PATHOM':'นครปฐม','NAKHON RATCHASIMA':'นครราชสีมา','NAKHON SAWAN':'นครสวรรค์',
-  'UTHAI THANI':'อุทัยธานี','NAKHON SI THAMMARAT':'นครศรีฯ','NAN':'น่าน','PHRAE':'แพร่',
-  'PATTANI':'ปัตตานี','YALA':'ยะลา','NARATHIWAT':'นราธิวาส',
-  'PHETCHABUN':'เพชรบูรณ์','PHICHIT':'พิจิตร','PHITSANULOK':'พิษณุโลก','UTTARADIT':'อุตรดิตถ์',
-  'PHRA NAKHON SI AYUTTHAYA':'อยุธยา','PHUKET':'ภูเก็ต',
-  'PRACHUAP KHIRI KHAN':'ประจวบฯ','PHETCHABURI':'เพชรบุรี',
-  'RANONG':'ระนอง','CHUMPHON':'ชุมพร','RATCHABURI':'ราชบุรี','SAMUT SONGKHRAM':'สมุทรสงคราม',
-  'RAYONG':'ระยอง','SA KAEO':'สระแก้ว','PRACHIN BURI':'ปราจีนบุรี',
-  'SAKON NAKHON':'สกลนคร','NAKHON PHANOM':'นครพนม','SAMUT SAKHON':'สมุทรสาคร',
-  'SONGKHLA':'สงขลา','SURAT THANI':'สุราษฎร์ฯ','SURIN':'สุรินทร์','SI SA KET':'ศรีสะเกษ',
-  'TAK':'ตาก','TRANG':'ตรัง','SATUN':'สตูล','PHATTHALUNG':'พัทลุง',
-  'UBON RATCHATHANI':'อุบลฯ','UDON THANI':'อุดรธานี','NONG BUA LAM PHU':'หนองบัวลำภู',
-  'YASOTHON':'ยโสธร','AMNAT CHAROEN':'อำนาจเจริญ',
-  'HEAD OFFICE':'ส่วนกลาง'
-};
-
-// คืนชื่อจังหวัดไทยจากข้อความเขตดูแล
-function provinceOf(area){
-  const raw = String(area||'').trim();
-  if(!raw) return 'ไม่ระบุ';
-  // รูปแบบ "BKK : ..." ใช้ตัวย่อหน้าเครื่องหมาย :
-  if(raw.includes(':')){
-    const key = raw.split(':')[0].trim().toUpperCase();
-    return PROVINCE_TH[key] || key;
-  }
-  // เอาจังหวัดตัวแรกก่อนคอมมา แล้วตัดเลขท้าย เช่น "CHIANG MAI 1" -> "CHIANG MAI"
-  const first = raw.split(',')[0].trim().replace(/\s+\d+$/,'').toUpperCase();
-  return PROVINCE_TH[first] || titleCase(first);
-}
-function titleCase(s){
-  return String(s).toLowerCase().replace(/\b[a-z]/g, c=>c.toUpperCase());
-}
-
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ================= แท็บ =================
