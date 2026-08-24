@@ -202,7 +202,7 @@ tr:last-child td{border-bottom:none;}
         <table>
           <thead><tr>
             <th style="width:16px;">#</th><th>ชื่อ · ภูมิภาค · สาขา</th>
-            <th style="width:36px;">Lead</th><th style="width:40px;">ปิดทรู</th>
+            <th style="width:40px;">Lead</th>
           </tr></thead>
           <tbody id="t-table"></tbody>
         </table>
@@ -458,9 +458,8 @@ function renderTrue(rows){
         <div class="sub2">${esc(s.r||'-')} · ${esc(shortBranch(DATA.branches[s.b]))}</div>
       </td>
       <td style="font-weight:600;">${v.leads}</td>
-      <td class="${v.trueClosed?'':'zero'}">${v.trueClosed}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="4" class="empty">ไม่มีข้อมูล</td></tr>';
+  }).join('') || '<tr><td colspan="3" class="empty">ไม่มีข้อมูล</td></tr>';
 }
 
 // ---------- หน้า 3 ----------
