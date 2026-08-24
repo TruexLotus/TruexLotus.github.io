@@ -135,7 +135,7 @@ tr:last-child td{border-bottom:none;}
 
 <div class="filters">
   <select id="f-week"><option value="8">8 สัปดาห์ล่าสุด</option></select>
-  <select id="f-branch"><option value="">ทุกสาขา</option></select>
+  <select id="f-prov"><option value="">ทุกจังหวัด</option></select>
 </div>
 
 <div class="tabs">
@@ -322,22 +322,32 @@ function buildFilters(){
   const wk = document.getElementById('f-week');
   wk.innerHTML = '<option value="8">8 สัปดาห์ล่าสุด</option><option value="4">4 สัปดาห์ล่าสุด</option><option value="0">ทุกสัปดาห์</option>';
 
-  const br = document.getElementById('f-branch');
-  const used = [...new Set(DATA.rows.map(r=>r[C_BRANCH]))];
-  br.innerHTML = '<option value="">ทุกสาขา</option>' +
-    used.map(i=>`<option value="${i}">${esc(shortBranch(DATA.branches[i]))}</option>`).join('');
+  // รายชื่อจังหวัด ดึงจากสาขาที่มี Lead จริง ไม่ได้พิมพ์ฝังไว้
+  // สาขาที่ยังไม่ได้ระบุจังหวัดในชีต จะถูกรวมเป็น "ไม่ระบุจังหวัด"
+  const pv = document.getElementById('f-prov');
+  const usedProvs = [...new Set(DATA.rows.map(r=>provOf(r[C_BRANCH])))].sort((a,b)=>
+    a==='ไม่ระบุจังหวัด' ? 1 : b==='ไม่ระบุจังหวัด' ? -1 : a.localeCompare(b,'th'));
+  pv.innerHTML = '<option value="">ทุกจังหวัด</option>' +
+    usedProvs.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
 
-  wk.onchange = br.onchange = render;
+  wk.onchange = pv.onchange = render;
   DATA.maxWeek = maxWeek;
 }
 
 function filtered(){
   const nWeeks = Number(document.getElementById('f-week').value);
-  const branch = document.getElementById('f-branch').value;
+  const prov = document.getElementById('f-prov').value;
   let rows = DATA.rows;
   if(nWeeks > 0) rows = rows.filter(r => r[C_WEEK] > DATA.maxWeek - nWeeks);
-  if(branch !== '') rows = rows.filter(r => r[C_BRANCH] === Number(branch));
+  if(prov !== '') rows = rows.filter(r => provOf(r[C_BRANCH]) === prov);
   return rows;
+}
+
+// จังหวัดของสาขา อ่านจากคอลัมน์ Province ในแท็บ Branches
+function provOf(branchIdx){
+  const list = DATA.provinces || [];
+  const p = String(list[branchIdx] || '').trim();
+  return p || 'ไม่ระบุจังหวัด';
 }
 
 // ================= วาดทุกหน้า =================
