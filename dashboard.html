@@ -191,6 +191,13 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="card">
+        <h2>ปิดเน็ตทรูได้ · รายสัปดาห์</h2>
+        <div class="sub">ตัวเลขบนแท่งคือจำนวนที่ปิดได้ · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสัปดาห์นั้น</div>
+        <div class="wkchart" id="t-wkchart"></div>
+        <div class="wklabels" id="t-wklabels"></div>
+      </div>
+
+      <div class="card">
         <h2>ปิดเน็ตทรูได้ · แยกตามสาขาโลตัส</h2>
         <div class="sub">เซลทรูที่ประจำหน้าสาขานี้ ปิดเน็ตทรูได้กี่ราย · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสาขา</div>
         <div id="t-provs"></div>
@@ -341,7 +348,7 @@ function render(){
   weeks.forEach((w,i)=> wkColor[w] = w < 1 ? '#B4B2A9' : WEEK_COLORS[i % WEEK_COLORS.length]);
 
   renderOverview(rows, weeks, wkColor);
-  renderTrue(rows);
+  renderTrue(rows, weeks, wkColor);
   renderLotus(rows);
 
   const d = new Date(DATA.generatedAt);
@@ -398,12 +405,32 @@ function renderOverview(rows, weeks, wkColor){
 }
 
 // ---------- หน้า 2 ----------
-function renderTrue(rows){
+function renderTrue(rows, weeks, wkColor){
   const people = new Set(rows.filter(r=>r[C_SALE]>=0).map(r=>r[C_SALE]));
   setNum('t-people', people.size, 'คน');
   set('t-avg', people.size ? (rows.length/people.size).toFixed(1) : '0');
   setNum('t-closed', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
   setNum('t-wait', count(rows, r=>r[C_TRUE]==='รอตัดสินใจเน็ตทรู'), 'ราย');
+
+  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ รายสัปดาห์ ----
+  // ใช้สีชุดเดียวกับกราฟสัปดาห์ในหน้าแรก จะได้เทียบข้ามหน้าได้
+  const wkClosed = {}, wkLeads = {};
+  weeks.forEach(w=>{ wkClosed[w]=0; wkLeads[w]=0; });
+  rows.forEach(r=>{
+    wkLeads[r[C_WEEK]]++;
+    if(r[C_TRUE]==='ปิดเน็ตทรูได้') wkClosed[r[C_WEEK]]++;
+  });
+  const wcmax = Math.max(1, ...Object.values(wkClosed));
+  const anyWeekClosed = Object.values(wkClosed).some(v=>v>0);
+
+  document.getElementById('t-wkchart').innerHTML = weeks.length ? weeks.map(w=>`
+    <div class="wkcol">
+      <div class="n" style="${wkClosed[w]?'color:var(--lotus-green); font-weight:600;':''}">${wkClosed[w]}</div>
+      <div class="bar" style="height:${anyWeekClosed ? (wkClosed[w]/wcmax)*82 : 0}%; background:${wkColor[w]};"></div>
+    </div>`).join('') : '<div class="empty">ไม่มีข้อมูล</div>';
+
+  document.getElementById('t-wklabels').innerHTML = weeks.map(w=>
+    `<div>${weekName(w)}<br><span style="opacity:.65">จาก ${wkLeads[w]}</span></div>`).join('');
 
   // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามสาขาโลตัส ----
   // ใช้ BranchName ที่อยู่ในชีตเดียวกับ TrueStatus จึงไม่ต้องจับคู่ข้ามชีต
