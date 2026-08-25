@@ -221,6 +221,8 @@ tr:last-child td{border-bottom:none;}
       <div class="kpis">
         <div class="kpi"><div class="lbl">ติดต่อแล้ว</div><div class="val" id="l-contacted">0 <span class="unit">ราย</span></div></div>
         <div class="kpi green"><div class="lbl">ปิดการขายได้</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi blue"><div class="lbl">เป็นสมาชิกอยู่แล้ว</div><div class="val" id="l-member">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">ปิดการขายไม่สำเร็จ</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
         <div class="kpi"><div class="lbl">ค้างรอติดต่อ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
         <div class="kpi warn"><div class="lbl">ค้างรอติดต่อเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
       </div>
@@ -237,7 +239,7 @@ tr:last-child td{border-bottom:none;}
         <table>
           <thead><tr>
             <th>สาขา</th><th style="width:34px;">Lead</th>
-            <th style="width:38px;">ติดต่อ<br>แล้ว</th><th style="width:34px;">ค้างรอ<br>ติดต่อ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
+            <th style="width:40px;">สมาชิก<br>เดิม</th><th style="width:34px;">ค้างรอ<br>ติดต่อ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
           </tr></thead>
           <tbody id="l-table"></tbody>
         </table>
@@ -263,6 +265,12 @@ const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6;
 // สถานะที่ถือว่า "ยังไม่ได้ติดต่อ" — รับได้ทั้งคำเก่าและคำใหม่
 // เผื่อวันหน้าเปลี่ยน dropdown ในชีตเป็น "รอติดต่อ" แดชบอร์ดจะยังนับถูกทันที ไม่ต้องแก้โค้ด
 const PENDING_STATUSES = ['รอโทร','รอติดต่อ'];
+
+// ชื่อสถานะที่ต้องตรงกับ dropdown ในชีตสาขาเป๊ะๆ
+// ถ้าวันหน้าเปลี่ยนข้อความในชีต ต้องมาแก้ 3 บรรทัดนี้ด้วย
+const ST_CLOSED = 'ปิดการขายสำเร็จ';
+const ST_MEMBER = 'เป็นสมาชิกอยู่แล้ว';
+const ST_LOST   = 'ปิดการขายไม่สำเร็จ';
 const isPending = st => PENDING_STATUSES.indexOf(st) !== -1;
 
 let DATA = null;
@@ -502,32 +510,42 @@ function renderTrue(rows, weeks, wkColor){
 // ---------- หน้า 3 ----------
 function renderLotus(rows){
   const contacted = count(rows, r=>!isPending(r[C_STATUS]));
-  const closed = count(rows, r=>r[C_STATUS]==='ปิดการขายสำเร็จ');
+  const closed  = count(rows, r=>r[C_STATUS]===ST_CLOSED);
+  const member  = count(rows, r=>r[C_STATUS]===ST_MEMBER);
+  const lost    = count(rows, r=>r[C_STATUS]===ST_LOST);
   const pending = count(rows, r=>isPending(r[C_STATUS]));
-  const sla = count(rows, isSla);
+  const sla     = count(rows, isSla);
+  // สถานะอื่นที่ติดต่อแล้วแต่ไม่เข้าสามกลุ่มบน เช่น "ไม่รับสาย"
+  const others  = contacted - closed - member - lost;
 
   setNum('l-contacted', contacted, 'ราย');
   setNum('l-closed', closed, 'ราย');
+  setNum('l-member', member, 'ราย');
+  setNum('l-lost', lost, 'ราย');
   setNum('l-pending', pending, 'ราย');
   setNum('l-sla', sla, 'ราย');
 
-  const other = contacted - closed;
   const tot = Math.max(1, rows.length);
-  document.getElementById('l-stack').innerHTML = `
-    <div style="width:${closed/tot*100}%; background:#1D9E75;"></div>
-    <div style="width:${other/tot*100}%; background:#B4B2A9;"></div>
-    <div style="width:${pending/tot*100}%; background:#E0A020;"></div>`;
-  document.getElementById('l-legend').innerHTML = `
-    <div><span style="background:#1D9E75"></span>ปิดการขายได้ ${closed}</div>
-    <div><span style="background:#B4B2A9"></span>ติดต่อแล้วไม่ปิด ${other}</div>
-    <div><span style="background:#E0A020"></span>ค้างรอติดต่อ ${pending}</div>`;
+  const seg = [
+    { n:'ปิดการขายได้',      v:closed,  c:'#1D9E75' },
+    { n:'เป็นสมาชิกอยู่แล้ว', v:member,  c:'#378ADD' },
+    { n:'ปิดไม่สำเร็จ',       v:lost,    c:'#C25A4A' },
+    { n:'ติดต่อแล้ว อื่นๆ',   v:others,  c:'#B4B2A9' },
+    { n:'ค้างรอติดต่อ',      v:pending, c:'#E0A020' }
+  ];
+  document.getElementById('l-stack').innerHTML =
+    seg.map(x=>`<div style="width:${x.v/tot*100}%; background:${x.c};"></div>`).join('');
+  document.getElementById('l-legend').innerHTML =
+    seg.filter(x=>x.v>0).map(x=>
+      `<div><span style="background:${x.c}"></span>${x.n} ${x.v}</div>`).join('');
 
   const by = {};
   rows.forEach(r=>{
     const b = r[C_BRANCH];
-    if(!by[b]) by[b] = {total:0, contacted:0, pending:0, sla:0};
+    if(!by[b]) by[b] = {total:0, contacted:0, member:0, pending:0, sla:0};
     by[b].total++;
     if(!isPending(r[C_STATUS])) by[b].contacted++; else by[b].pending++;
+    if(r[C_STATUS]===ST_MEMBER) by[b].member++;
     if(isSla(r)) by[b].sla++;
   });
 
@@ -540,7 +558,7 @@ function renderLotus(rows){
           <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ติดต่อแล้ว ${pct}%</div>
         </td>
         <td>${v.total}</td>
-        <td>${v.contacted}</td>
+        <td class="${v.member?'':'zero'}" style="${v.member?'color:var(--blue);':''}">${v.member}</td>
         <td>${v.pending}</td>
         <td class="${v.sla?'hot':'zero'}">${v.sla}</td>
       </tr>`;
