@@ -209,10 +209,10 @@
         <div class="seg green" id="seg-interest">
           <button data-v="อาหารสด" type="button">🥬 อาหารสด</button>
           <button data-v="อาหารแห้ง" type="button">🍚 อาหารแห้ง</button>
-          <button data-v="อื่นๆ" type="button">✏️ อื่นๆ</button>
+          <button data-v="สินค้าแช่แข็ง" type="button">🧊 แช่แข็ง</button>
         </div>
-        <div class="field" id="interest-other-wrap" style="display:none; margin-top:10px; margin-bottom:0;">
-          <input type="text" id="f-interest-other" placeholder="ระบุสินค้าอื่นๆ ที่ลูกค้าสนใจ">
+        <div class="field" style="margin-top:10px; margin-bottom:0;">
+          <input type="text" id="f-interest-other" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)">
         </div>
 
         <label class="field-label" style="margin-top:14px;">ผลการเสนอเน็ตบ้านทรู <span style="font-weight:400; color:var(--muted);">(เลือก 1 ข้อ)</span></label>
@@ -296,9 +296,6 @@ let isSubmittingLead = false;
 document.getElementById('seg-interest').addEventListener('click', e=>{
   const b = e.target.closest('button'); if(!b) return;
   b.classList.toggle('active');
-  if(b.dataset.v === 'อื่นๆ'){
-    document.getElementById('interest-other-wrap').style.display = b.classList.contains('active') ? 'block' : 'none';
-  }
 });
 // แถวเน็ตทรู เลือกได้ข้อเดียว
 document.getElementById('seg-truenet').addEventListener('click', e=>{
@@ -532,15 +529,12 @@ async function submitLead(){
 
   if(!name || !phone || !shop){ showToast('กรอกชื่อ เบอร์โทร และชื่อร้านให้ครบก่อนนะ'); return; }
 
-  const interestBtns = [...document.querySelectorAll('#seg-interest button.active')];
-  let interests = interestBtns.map(b=>b.dataset.v).filter(v=>v!=='อื่นๆ');
-  if(interestBtns.some(b=>b.dataset.v==='อื่นๆ')){
-    const other = document.getElementById('f-interest-other').value.trim();
-    if(!other){ showToast('กรอกรายละเอียด "อื่นๆ" ที่ลูกค้าสนใจด้วย'); return; }
-    interests.push('อื่นๆ: ' + other);
-  }
+  const interests = [...document.querySelectorAll('#seg-interest button.active')].map(b=>b.dataset.v);
   if(interests.length === 0){ showToast('เลือกสินค้าที่ลูกค้าสนใจอย่างน้อย 1 อย่าง'); return; }
-  const interestStr = interests.join(', ');
+
+  // รายละเอียดเพิ่มเติม เป็นช่องอิสระ ไม่บังคับกรอก ต่อท้ายไปในคอลัมน์ Interest
+  const extra = document.getElementById('f-interest-other').value.trim();
+  const interestStr = interests.join(', ') + (extra ? (' · ' + extra) : '');
 
   if(!selectedTrueNet){ showToast('เลือกผลการเสนอเน็ตบ้านทรูด้วย'); return; }
   if(!selectedTime){ showToast('เลือกเวลาที่สะดวกให้โทรกลับด้วย'); return; }
@@ -607,7 +601,6 @@ function resetForm(){
   document.getElementById('f-phone').value='';
   document.getElementById('f-shop').value='';
   document.getElementById('f-interest-other').value='';
-  document.getElementById('interest-other-wrap').style.display='none';
   document.querySelectorAll('#seg-interest button, #seg-truenet button, #seg-time button').forEach(b=>b.classList.remove('active'));
   selectedTime = null; selectedTrueNet = null; currentFix = null; nearestBranch = null;
   document.getElementById('gpsbox').classList.remove('has-fix');
