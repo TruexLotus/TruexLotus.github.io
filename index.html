@@ -256,7 +256,7 @@
   <div class="modal">
     <button class="closebtn" onclick="closeBranchModal()">✕</button>
     <h3>เลือกสาขา Lotus's</h3>
-    <div class="hint">ระบบจับพิกัดแล้ว เลือกสาขาที่ถูกต้อง (เรียงจากใกล้สุด) แล้วกดยืนยัน</div>
+    <div class="hint">ระบบจับพิกัดแล้ว เลือกสาขาที่ถูกต้องจาก 5 สาขาที่ใกล้ที่สุด แล้วกดยืนยัน</div>
     <div id="branch-modal-list"></div>
     <button class="btn btn-red" style="margin-top:6px;" onclick="confirmBranchModal()">ยืนยันสาขานี้</button>
   </div>
@@ -452,8 +452,13 @@ function haversineKm(lat1, lng1, lat2, lng2){
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// จำนวนสาขาที่แสดงในหน้าเลือกสาขา (เรียงจากใกล้สุด)
+// แก้ตัวเลขนี้ที่เดียวถ้าอยากให้แสดงมากหรือน้อยกว่านี้
+const NEAREST_BRANCH_COUNT = 5;
+
 let sortedBranchOptions = [];
 let selectedBranchInModal = null;
+let showAllBranches = false;
 
 function captureLocation(){
   if(!navigator.geolocation){ showToast('อุปกรณ์นี้ไม่รองรับ GPS'); return; }
@@ -481,6 +486,7 @@ function captureLocation(){
 
 // ---------- Branch confirm modal ----------
 function openBranchModal(){
+  showAllBranches = false;
   selectedBranchInModal = sortedBranchOptions[0].branch;
   renderBranchModalList();
   document.getElementById('branch-modal-backdrop').classList.add('show');
@@ -494,12 +500,26 @@ function closeBranchModal(){
 }
 function renderBranchModalList(){
   const wrap = document.getElementById('branch-modal-list');
-  wrap.innerHTML = sortedBranchOptions.map((item, idx) => `
+  const total = sortedBranchOptions.length;
+  const shown = showAllBranches ? sortedBranchOptions : sortedBranchOptions.slice(0, NEAREST_BRANCH_COUNT);
+
+  // ลำดับใน shown ตรงกับใน sortedBranchOptions เสมอ เพราะ slice ไม่สลับลำดับ
+  let html = shown.map((item, idx) => `
     <button type="button" class="branch-option ${idx===0?'nearest':''} ${selectedBranchInModal && selectedBranchInModal.name===item.branch.name ? 'selected':''}" onclick="selectBranchInModal(${idx})">
       <span class="name-row">${escapeHtml(item.branch.name)}</span>
       <span class="dist">${item.distKm.toFixed(1)} กม.</span>
     </button>
   `).join('');
+
+  // เผื่อกรณี GPS เพี้ยนหรือพิกัดสาขาในชีตผิด จะได้ไม่ตัน
+  if(!showAllBranches && total > NEAREST_BRANCH_COUNT){
+    html += `<button type="button" onclick="expandBranchList()" style="display:block; width:100%; margin-top:8px; padding:9px; background:none; border:none; color:var(--muted); font-family:inherit; font-size:12px; text-decoration:underline; cursor:pointer;">ไม่เจอสาขาที่ต้องการ? ดูทั้งหมด ${total} สาขา</button>`;
+  }
+  wrap.innerHTML = html;
+}
+function expandBranchList(){
+  showAllBranches = true;
+  renderBranchModalList();
 }
 function selectBranchInModal(idx){
   selectedBranchInModal = sortedBranchOptions[idx].branch;
