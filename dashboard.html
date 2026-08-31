@@ -163,7 +163,7 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div class="kpi warn" style="margin-bottom:12px;">
-        <div class="lbl">⏱ ค้างรอติดต่อเกิน 3 วัน</div>
+        <div class="lbl">⏱ ค้างรอดำเนินการเกิน 3 วัน</div>
         <div class="val" id="o-sla">0 <span class="unit" style="color:inherit;">ราย</span></div>
       </div>
 
@@ -219,12 +219,14 @@ tr:last-child td{border-bottom:none;}
     <!-- ============ ทีม Lotus's ============ -->
     <section id="p-lotus">
       <div class="kpis">
-        <div class="kpi"><div class="lbl">ติดต่อแล้ว</div><div class="val" id="l-contacted">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi green"><div class="lbl">ปิดการขายได้</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi blue"><div class="lbl">เป็นสมาชิกอยู่แล้ว</div><div class="val" id="l-member">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">ปิดการขายไม่สำเร็จ</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">ค้างรอติดต่อ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi warn"><div class="lbl">ค้างรอติดต่อเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">ดำเนินการแล้ว</div><div class="val" id="l-contacted">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi green"><div class="lbl">ปิดการขายสำเร็จ</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi blue"><div class="lbl">อยู่ระหว่างดำเนินงาน</div><div class="val" id="l-progress">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">เป็นลูกค้าอยู่แล้ว</div><div class="val" id="l-member">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">ปิดไม่สำเร็จ</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">หลีดซ้ำ</div><div class="val" id="l-dup">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">รอดำเนินการ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi warn"><div class="lbl">รอดำเนินการเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
       </div>
 
       <div class="card">
@@ -239,7 +241,7 @@ tr:last-child td{border-bottom:none;}
         <table>
           <thead><tr>
             <th>สาขา</th><th style="width:34px;">Lead</th>
-            <th style="width:40px;">สมาชิก<br>เดิม</th><th style="width:34px;">ค้างรอ<br>ติดต่อ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
+            <th style="width:40px;">ลูกค้า<br>เดิม</th><th style="width:34px;">รอ<br>ดำเนินการ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
           </tr></thead>
           <tbody id="l-table"></tbody>
         </table>
@@ -264,14 +266,18 @@ const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6;
 
 // สถานะที่ถือว่า "ยังไม่ได้ติดต่อ" — รับได้ทั้งคำเก่าและคำใหม่
 // เผื่อวันหน้าเปลี่ยน dropdown ในชีตเป็น "รอติดต่อ" แดชบอร์ดจะยังนับถูกทันที ไม่ต้องแก้โค้ด
-const PENDING_STATUSES = ['รอโทร','รอติดต่อ'];
+// ---------- การจัดกลุ่มสถานะ ----------
+// แต่ละกลุ่มรับได้ทั้งคำใหม่และคำเก่า เพราะข้อมูลเดิมในชีตไม่ได้แก้ย้อนหลัง
+// ตัวแรกของแต่ละชุดคือคำปัจจุบันที่ใช้ใน dropdown ที่เหลือคือคำเก่าที่ยังค้างอยู่
+const PENDING_STATUSES  = ['รอดำเนินการ', 'รอโทร', 'รอติดต่อ'];
+const CLOSED_STATUSES   = ['ปิดการขายสำเร็จ'];
+const LOST_STATUSES     = ['ปิดไม่สำเร็จ', 'ปิดการขายไม่สำเร็จ', 'ไม่รับสาย'];
+const MEMBER_STATUSES   = ['เป็นลูกค้าอยู่แล้ว', 'เป็นสมาชิกอยู่แล้ว'];
+const PROGRESS_STATUSES = ['อยู่ระหว่างการดำเนินงาน'];
+const DUP_STATUSES      = ['หลีดซ้ำ'];
 
-// ชื่อสถานะที่ต้องตรงกับ dropdown ในชีตสาขาเป๊ะๆ
-// ถ้าวันหน้าเปลี่ยนข้อความในชีต ต้องมาแก้ 3 บรรทัดนี้ด้วย
-const ST_CLOSED = 'ปิดการขายสำเร็จ';
-const ST_MEMBER = 'เป็นสมาชิกอยู่แล้ว';
-const ST_LOST   = 'ปิดการขายไม่สำเร็จ';
-const isPending = st => PENDING_STATUSES.indexOf(st) !== -1;
+const inList = (st, arr) => arr.indexOf(String(st||'').trim()) !== -1;
+const isPending = st => inList(st, PENDING_STATUSES);
 
 let DATA = null;
 
@@ -510,31 +516,37 @@ function renderTrue(rows, weeks, wkColor){
 // ---------- หน้า 3 ----------
 function renderLotus(rows){
   const contacted = count(rows, r=>!isPending(r[C_STATUS]));
-  const closed  = count(rows, r=>r[C_STATUS]===ST_CLOSED);
-  const member  = count(rows, r=>r[C_STATUS]===ST_MEMBER);
-  const lost    = count(rows, r=>r[C_STATUS]===ST_LOST);
-  const pending = count(rows, r=>isPending(r[C_STATUS]));
-  const sla     = count(rows, isSla);
-  // สถานะอื่นที่ติดต่อแล้วแต่ไม่เข้าสามกลุ่มบน เช่น "ไม่รับสาย"
-  const others  = contacted - closed - member - lost;
+  const closed   = count(rows, r=>inList(r[C_STATUS], CLOSED_STATUSES));
+  const progress = count(rows, r=>inList(r[C_STATUS], PROGRESS_STATUSES));
+  const member   = count(rows, r=>inList(r[C_STATUS], MEMBER_STATUSES));
+  const lost     = count(rows, r=>inList(r[C_STATUS], LOST_STATUSES));
+  const dup      = count(rows, r=>inList(r[C_STATUS], DUP_STATUSES));
+  const pending  = count(rows, r=>isPending(r[C_STATUS]));
+  const sla      = count(rows, isSla);
+  // สถานะที่ไม่เข้ากลุ่มไหนเลย กันไม่ให้ตัวเลขในแถบรวมกันไม่ครบ 100%
+  const others   = contacted - closed - progress - member - lost - dup;
 
   setNum('l-contacted', contacted, 'ราย');
   setNum('l-closed', closed, 'ราย');
+  setNum('l-progress', progress, 'ราย');
   setNum('l-member', member, 'ราย');
   setNum('l-lost', lost, 'ราย');
+  setNum('l-dup', dup, 'ราย');
   setNum('l-pending', pending, 'ราย');
   setNum('l-sla', sla, 'ราย');
 
   const tot = Math.max(1, rows.length);
   const seg = [
-    { n:'ปิดการขายได้',      v:closed,  c:'#1D9E75' },
-    { n:'เป็นสมาชิกอยู่แล้ว', v:member,  c:'#378ADD' },
-    { n:'ปิดไม่สำเร็จ',       v:lost,    c:'#C25A4A' },
-    { n:'ติดต่อแล้ว อื่นๆ',   v:others,  c:'#B4B2A9' },
-    { n:'ค้างรอติดต่อ',      v:pending, c:'#E0A020' }
+    { n:'ปิดการขายสำเร็จ',        v:closed,   c:'#1D9E75' },
+    { n:'อยู่ระหว่างดำเนินงาน',    v:progress, c:'#378ADD' },
+    { n:'เป็นลูกค้าอยู่แล้ว',      v:member,   c:'#8B5CF6' },
+    { n:'ปิดไม่สำเร็จ',           v:lost,     c:'#C25A4A' },
+    { n:'หลีดซ้ำ',               v:dup,      c:'#8A8880' },
+    { n:'อื่นๆ',                 v:others,   c:'#D6D3CC' },
+    { n:'รอดำเนินการ',            v:pending,  c:'#E0A020' }
   ];
   document.getElementById('l-stack').innerHTML =
-    seg.map(x=>`<div style="width:${x.v/tot*100}%; background:${x.c};"></div>`).join('');
+    seg.map(x=>`<div style="width:${Math.max(0,x.v)/tot*100}%; background:${x.c};"></div>`).join('');
   document.getElementById('l-legend').innerHTML =
     seg.filter(x=>x.v>0).map(x=>
       `<div><span style="background:${x.c}"></span>${x.n} ${x.v}</div>`).join('');
@@ -545,7 +557,7 @@ function renderLotus(rows){
     if(!by[b]) by[b] = {total:0, contacted:0, member:0, pending:0, sla:0};
     by[b].total++;
     if(!isPending(r[C_STATUS])) by[b].contacted++; else by[b].pending++;
-    if(r[C_STATUS]===ST_MEMBER) by[b].member++;
+    if(inList(r[C_STATUS], MEMBER_STATUSES)) by[b].member++;
     if(isSla(r)) by[b].sla++;
   });
 
@@ -555,10 +567,10 @@ function renderLotus(rows){
       return `<tr>
         <td>
           <div class="nm2">${esc(shortBranch(DATA.branches[bi]))}</div>
-          <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ติดต่อแล้ว ${pct}%</div>
+          <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ดำเนินการแล้ว ${pct}%</div>
         </td>
         <td>${v.total}</td>
-        <td class="${v.member?'':'zero'}" style="${v.member?'color:var(--blue);':''}">${v.member}</td>
+        <td class="${v.member?'':'zero'}" style="${v.member?'color:#8B5CF6;':''}">${v.member}</td>
         <td>${v.pending}</td>
         <td class="${v.sla?'hot':'zero'}">${v.sla}</td>
       </tr>`;
