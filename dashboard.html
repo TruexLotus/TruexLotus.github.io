@@ -157,7 +157,10 @@ tr:last-child td{border-bottom:none;}
     <section id="p-overview" class="active">
       <div class="kpis">
         <div class="kpi"><div class="lbl">Lead ทั้งหมด</div><div class="val" id="o-total">0</div></div>
-        <div class="kpi green"><div class="lbl">ปิดเน็ตทรูได้</div><div class="val" id="o-true">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi green">
+          <div class="lbl">ปิดเน็ตทรูได้ทั้งหมด <span style="font-size:10.5px;">· รวมทุกช่องทาง</span></div>
+          <div class="val" id="o-true">0 <span class="unit">ราย</span></div>
+        </div>
         <div class="kpi green"><div class="lbl">ปิดขายโลตัสได้</div><div class="val" id="o-closed">0 <span class="unit">ราย</span></div></div>
         <div class="kpi"><div class="lbl">มูลค่าตะกร้ารวม</div><div class="val" id="o-basket">฿0</div></div>
       </div>
@@ -396,7 +399,9 @@ function render(){
 // ---------- หน้า 1 ----------
 function renderOverview(rows, weeks, wkColor){
   set('o-total', rows.length.toLocaleString());
-  setNum('o-true', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
+  // ยอดปิดเน็ตทรูรวม = จากระบบ + ยอดนอกพื้นที่ + ปิดได้จากลูกค้ารอตัดสินใจ
+  // สองก้อนหลังเป็นตัวเลขกรอกมือจากชีต แยกรายละเอียดดูได้ในหน้าทีมทรู
+  setNum('o-true', trueClosedTotal(rows), 'ราย');
   setNum('o-closed', count(rows, r=>r[C_STATUS]==='ปิดการขายสำเร็จ'), 'ราย');
   set('o-basket', '฿' + sum(rows, r=>r[C_BASKET]).toLocaleString(undefined,{maximumFractionDigits:0}));
   setNum('o-sla', count(rows, isSla), 'ราย');
@@ -605,6 +610,19 @@ function renderLotus(rows){
 }
 
 // ================= ตัวช่วย =================
+// ยอดปิดเน็ตทรูรวมทุกช่องทาง
+// ยอดนอกพื้นที่เป็นตัวเลขระดับประเทศ จึงนับเฉพาะตอนดูภาพรวมทุกจังหวัด
+function trueClosedTotal(rows){
+  const fromSystem = count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้');
+  const selProv = document.getElementById('f-prov').value;
+  const mp = DATA.manualProv || {};
+  const decided = selProv === ''
+    ? Object.values(mp).reduce((a,b)=>a+(Number(b)||0),0)
+    : (Number(mp[selProv]) || 0);
+  const outside = selProv === '' ? (Number((DATA.manual || {})['ยอดนอกพื้นที่']) || 0) : 0;
+  return fromSystem + decided + outside;
+}
+
 function isSla(r){ return isPending(r[C_STATUS]) && r[C_AGE] > SLA_DAYS; }
 function count(rows, fn){ return rows.filter(fn).length; }
 function sum(rows, fn){ return rows.reduce((s,r)=>s+(fn(r)||0),0); }
