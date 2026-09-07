@@ -190,6 +190,11 @@ tr:last-child td{border-bottom:none;}
         <div class="kpi blue"><div class="lbl">รอตัดสินใจเน็ตทรู</div><div class="val" id="t-wait">0 <span class="unit">ราย</span></div></div>
       </div>
 
+      <div class="kpi" id="t-outside-card" style="margin-bottom:12px; display:none;">
+        <div class="lbl">ยอดรวมนอกพื้นที่ <span style="font-size:10.5px;">· กรอกจากชีต</span></div>
+        <div class="val" id="t-outside">0 <span class="unit">ราย</span></div>
+      </div>
+
       <div class="card">
         <h2>ปิดเน็ตทรูได้ · รายสัปดาห์</h2>
         <div class="sub">ตัวเลขบนแท่งคือจำนวนที่ปิดได้ · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสัปดาห์นั้น</div>
@@ -430,6 +435,13 @@ function renderOverview(rows, weeks, wkColor){
 
 // ---------- หน้า 2 ----------
 function renderTrue(rows, weeks, wkColor){
+  // ยอดนอกพื้นที่เป็นตัวเลขที่กรอกมือ ไม่ได้แยกรายจังหวัดและไม่ผูกกับช่วงสัปดาห์
+  // จึงแสดงเฉพาะตอนดูภาพรวมทุกจังหวัด ไม่งั้นจะอ่านผิดว่าเป็นยอดของจังหวัดที่เลือก
+  const outside = Number((DATA.manual || {})['ยอดนอกพื้นที่']) || 0;
+  const showOutside = document.getElementById('f-prov').value === '';
+  document.getElementById('t-outside-card').style.display = showOutside ? 'block' : 'none';
+  if(showOutside) setNum('t-outside', outside, 'ราย');
+
   const people = new Set(rows.filter(r=>r[C_SALE]>=0).map(r=>r[C_SALE]));
   setNum('t-people', people.size, 'คน');
   set('t-avg', people.size ? (rows.length/people.size).toFixed(1) : '0');
