@@ -76,7 +76,7 @@ button{font-family:inherit;font-size:16px;font-weight:600;border-radius:12px;cur
 #saleBar .sub{font-size:12px;color:var(--muted)}
 
 /* ---------- Tabs ---------- */
-#tabs{display:none;gap:8px;margin-top:14px}
+#tabs{display:flex;gap:8px;margin-top:14px}
 #tabs button{flex:1;background:#fff;border:1px solid var(--line);color:var(--muted);padding:12px 6px;font-size:14.5px}
 #tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .badge{display:inline-block;background:var(--red);color:#fff;border-radius:20px;font-size:11px;
@@ -142,8 +142,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:26px;line-
 
   <!-- เข้าใช้งาน -->
   <div class="card" id="loginCard">
-    <h2>เริ่มต้นใช้งาน</h2>
-    <p class="lead">กรอกรหัสเซลครั้งเดียว เครื่องจะจำไว้ให้ครั้งต่อไป</p>
+    <h2>ข้อมูลพนักงานขาย</h2>
     <label for="saleCode">รหัสเซล</label>
     <input id="saleCode" autocapitalize="characters" autocomplete="off" placeholder="กรอกรหัสเซลของคุณ">
     <div class="hint" id="loginMsg"></div>
@@ -171,10 +170,10 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:26px;line-
     <label for="cOrder">เลข Order</label>
     <input id="cOrder" autocomplete="off" placeholder="เลขที่ออเดอร์ในระบบทรู">
 
-    <label>จำนวนวอยเชอร์ที่เบิก</label>
+    <label>มูลค่าวอยเชอร์ที่เบิก</label>
     <div class="qtypick" id="cQtyPick">
-      <button type="button" data-v="150">150</button>
-      <button type="button" data-v="300">300</button>
+      <button type="button" data-v="150">฿150</button>
+      <button type="button" data-v="300">฿300</button>
     </div>
 
     <label>หลักฐาน — หน้าจอ IVR ที่ Status ขึ้น Complete</label>
@@ -196,7 +195,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:26px;line-
     <div class="card">
       <h2>รอส่งมอบให้ลูกค้า</h2>
       <p class="lead">อนุมัติแล้วต้องส่งมอบและแนบรูปภายใน 3 วัน</p>
-      <div id="listApproved"><div class="empty">กำลังโหลด…</div></div>
+      <div id="listApproved"><div class="empty">กรอกรหัสเซลด้านบนก่อน</div></div>
     </div>
     <div class="card">
       <h2>รายการที่ผ่านมา</h2>
@@ -250,13 +249,13 @@ const store = {
   del(k){ try{ localStorage.removeItem(k) }catch(e){} }
 };
 let sale=null, claimImg=null, deliverImg=null, currentId=null, cache=[];
-let claimQty = null;   // จำนวนวอยเชอร์ที่เลือก มีแค่ 150 กับ 300
+let claimValue = null;   // มูลค่าวอยเชอร์ที่เลือก มีแค่ 150 กับ 300 บาท
 
 document.getElementById('cQtyPick').addEventListener('click', e=>{
   const b = e.target.closest('button'); if(!b) return;
   [...b.parentElement.children].forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
-  claimQty = Number(b.dataset.v);
+  claimValue = Number(b.dataset.v);
 });
 
 async function api(action, payload){
@@ -324,7 +323,6 @@ async function verify(code){
     sale=r.sale; store.set('vsSale', sale.code);
     $('loginCard').style.display='none';
     $('saleBar').style.display='flex';
-    $('tabs').style.display='flex';
     $('saleName').textContent=sale.name;
     $('saleSub').textContent=sale.code + (sale.province?' · '+sale.province:'');
     switchTab('claim'); loadList();
@@ -346,21 +344,27 @@ document.querySelectorAll('#tabs button').forEach(b=>{
 
 /* ============ ส่งคำขอเบิก ============ */
 $('btnClaim').addEventListener('click', async ()=>{
+  if(!sale){
+    say($('claimMsg'),'กรอกรหัสเซลแล้วกดยืนยันรหัสก่อน',true);
+    $('saleCode').focus();
+    window.scrollTo({top:0, behavior:'smooth'});
+    return;
+  }
   const p={
     saleCode: sale.code,
     orderNo: $('cOrder').value.trim(),
-    qty: Number(claimQty),
+    value: Number(claimValue),
     image: claimImg
   };
   if(!p.orderNo){ say($('claimMsg'),'กรอกเลข Order ก่อน',true); return }
-  if(!claimQty){ say($('claimMsg'),'เลือกจำนวนวอยเชอร์ที่เบิก',true); return }
+  if(!claimValue){ say($('claimMsg'),'เลือกมูลค่าวอยเชอร์ที่เบิก',true); return }
   if(!p.image){ say($('claimMsg'),'แนบรูปหน้าจอ IVR ที่ขึ้น Complete ก่อนส่ง',true); return }
   say($('claimMsg'),'');
   busy($('btnClaim'),true,'ส่งเรื่องให้ PBH/CM อนุมัติ');
   try{
     const r=await api('submitClaim',p);
     $('cOrder').value='';
-    claimQty = null;
+    claimValue = null;
     document.querySelectorAll('#cQtyPick button').forEach(b=>b.classList.remove('on'));
     claimImg=null;
     resetUpload('upClaim','upClaimBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นคำว่า Complete ชัดเจน');
@@ -372,6 +376,7 @@ $('btnClaim').addEventListener('click', async ()=>{
 
 /* ============ รายการของฉัน ============ */
 async function loadList(){
+  if(!sale) return;
   try{
     const r=await api('myVouchers',{saleCode:sale.code});
     cache=r.items;
@@ -393,8 +398,8 @@ function cardApproved(v){
   return `<div class="item">
     <div class="top">
       <div><div class="cust">Order ${esc(v.orderNo)}</div>
-        <div class="meta">เบิก ${esc(v.qty)}</div></div>
-      <span class="qty">${esc(v.qty)}</span>
+        <div class="meta">มูลค่า ฿${esc(v.value)}</div></div>
+      <span class="qty">฿${esc(v.value)}</span>
     </div>
     <span class="due ${cls}">${txt}</span>
     <button class="btn-ghost" style="margin-top:12px" data-deliver="${esc(v.id)}">แนบรูปส่งมอบ</button>
@@ -406,7 +411,7 @@ function cardOther(v){
   return `<div class="item">
     <div class="top">
       <div><div class="cust">Order ${esc(v.orderNo)}</div>
-        <div class="meta">เบิก ${esc(v.qty)}</div></div>
+        <div class="meta">มูลค่า ฿${esc(v.value)}</div></div>
       <span class="pill ${m[0]}">${m[1]}</span>
     </div>
     ${v.rejectReason?'<div class="meta" style="margin-top:9px">เหตุผล: '+esc(v.rejectReason)+'</div>':''}
@@ -419,7 +424,7 @@ function openDeliver(id){
   currentId=id; deliverImg=null;
   resetUpload('upDeliver','upDeliverBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นลูกค้าและวอยเชอร์ในรูปเดียวกัน');
   $('dfTitle').textContent='ส่งมอบ Order '+v.orderNo;
-  $('dfSub').textContent='จำนวน '+v.qty;
+  $('dfSub').textContent='มูลค่า ฿'+v.value;
   say($('deliverMsg'),'');
   $('tabDeliver').style.display='none';
   $('deliverForm').style.display='block';
@@ -454,6 +459,7 @@ $('saleCode').addEventListener('keydown',e=>{ if(e.key==='Enter') verify($('sale
 $('btnLogout').addEventListener('click',()=>{ store.del('vsSale'); location.reload() });
 
 const saved=store.get('vsSale');
+switchTab('claim');   // เปิดหน้ากรอกไว้เลย ไม่ต้องรอยืนยันรหัสก่อน
 if(saved){ $('saleCode').value=saved; verify(saved) }
 </script>
 </body>
