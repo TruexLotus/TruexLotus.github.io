@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบเบิก Voucher | true x Lotus's</title>
+<meta name="theme-color" content="#E30613">
+
+<!-- ตัวอย่างการ์ดพรีวิวตอนแปะลิงก์ในไลน์ -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="ระบบเบิก Voucher — true x Lotus's">
+<meta property="og:description" content="เบิกวอยเชอร์หลังติดตั้งเสร็จ และยืนยันการส่งมอบให้ลูกค้า">
+<meta property="og:image" content="og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#E30613; --red-dark:#A8030E; --ink:#1A1A1C; --muted:#86828A;
+  --line:#E9E4DF; --bg:#FBF8F5; --card:#FFFFFF;
+  --green:#0F9D58; --amber:#B4780A;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Prompt',-apple-system,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-bottom:48px;
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* ---------- Header ---------- */
+header{background:linear-gradient(150deg,var(--red) 0%,var(--red-dark) 100%);color:#fff;
+  border-radius:0 0 28px 28px;padding:20px 0 24px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.brand .t{background:#fff;color:var(--red);border-radius:6px;padding:1px 9px}
+.brand .x{opacity:.6;font-size:13px}
+.brand .l{background:#fff;color:#00843D;border-radius:20px;padding:1px 11px;font-size:13px}
+header h1{margin:14px 0 4px;font-size:23px;font-weight:600;letter-spacing:-.2px}
+header p{margin:0;font-size:13.5px;opacity:.88}
+
+/* ---------- Steps (ลำดับงานจริง 4-5-6) ---------- */
+.steps{display:flex;gap:0;margin-top:18px}
+.steps div{flex:1;text-align:center;font-size:11.5px;opacity:.9;position:relative;padding-top:26px}
+.steps div::before{content:attr(data-n);position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.22);
+  font-size:11px;font-weight:600;line-height:20px}
+.steps div::after{content:'';position:absolute;top:10px;left:calc(50% + 14px);right:calc(-50% + 14px);height:1px;background:rgba(255,255,255,.3)}
+.steps div:last-child::after{display:none}
+.steps div.now::before{background:#fff;color:var(--red)}
+.steps div.now{opacity:1;font-weight:500}
+
+/* ---------- Cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px}
+.card h2{margin:0 0 4px;font-size:16.5px;font-weight:600}
+.card .lead{margin:0 0 16px;font-size:13px;color:var(--muted)}
+label{display:block;font-size:14px;font-weight:500;margin:15px 0 6px}
+input,select{width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+  padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff}
+input:focus,select:focus{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+input::placeholder{color:#C7C1BC}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:1px}
+.hint.bad{color:var(--red)}
+
+button{font-family:inherit;font-size:16px;font-weight:600;border-radius:12px;cursor:pointer;border:1px solid transparent}
+.btn-primary{width:100%;background:var(--red);color:#fff;padding:15px;margin-top:16px}
+.btn-primary:disabled{background:#DED8D2;cursor:not-allowed}
+.btn-ghost{width:100%;background:#fff;color:var(--ink);border-color:var(--line);padding:12px;font-size:15px}
+.btn-link{background:none;border:none;color:var(--red);font-size:13px;font-weight:500;padding:6px 0}
+
+/* ---------- Sale identity ---------- */
+#saleBar{display:none;align-items:center;justify-content:space-between;gap:10px;
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 15px;margin-top:14px}
+#saleBar .nm{font-weight:600;font-size:15px}
+#saleBar .sub{font-size:12px;color:var(--muted)}
+
+/* ---------- Tabs ---------- */
+#tabs{display:none;gap:8px;margin-top:14px}
+#tabs button{flex:1;background:#fff;border:1px solid var(--line);color:var(--muted);padding:12px 6px;font-size:14.5px}
+#tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.badge{display:inline-block;background:var(--red);color:#fff;border-radius:20px;font-size:11px;
+  font-weight:600;padding:0 6px;margin-left:5px;vertical-align:1px}
+#tabs button.on .badge{background:#fff;color:var(--ink)}
+
+/* ---------- Upload ---------- */
+.upload{display:block;border:1.5px dashed #D9D3CD;border-radius:14px;padding:24px 14px;text-align:center;
+  background:#FCFAF8;cursor:pointer;margin-top:6px}
+.upload.filled{border-style:solid;border-color:var(--green);background:#F4FAF6;padding:10px}
+.upload input{display:none}
+.upload .ic{font-size:26px;line-height:1}
+.upload .tx{font-size:14px;font-weight:500;margin-top:6px}
+.upload .sb{font-size:12px;color:var(--muted);margin-top:2px}
+.upload img{max-width:100%;border-radius:10px;display:block}
+
+/* ---------- List ---------- */
+.item{border:1px solid var(--line);border-radius:14px;padding:15px;margin-top:10px;background:#fff}
+.item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.item .cust{font-weight:600;font-size:15px}
+.item .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.qty{font-size:12px;font-weight:600;background:#F4F0EC;border-radius:8px;padding:4px 9px;white-space:nowrap}
+.due{display:inline-block;font-size:12.5px;font-weight:500;border-radius:8px;padding:4px 10px;margin-top:11px}
+.due.ok{background:#EFF7F2;color:var(--green)}
+.due.warn{background:#FFF6E5;color:var(--amber)}
+.due.late{background:#FDECEC;color:var(--red)}
+.pill{font-size:12px;font-weight:600;border-radius:8px;padding:4px 9px;white-space:nowrap}
+.pill.pending{background:#FFF6E5;color:var(--amber)}
+.pill.rejected{background:#FDECEC;color:var(--red)}
+.pill.done{background:#EFF7F2;color:var(--green)}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:26px 10px}
+
+/* ---------- Result ---------- */
+#result{display:none;text-align:center;padding:34px 18px}
+#result .mark{width:62px;height:62px;border-radius:50%;background:#EFF7F2;color:var(--green);
+  display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px}
+#result h2{margin:0 0 6px;font-size:19px}
+#result p{margin:0;color:var(--muted);font-size:14px}
+
+footer{text-align:center;font-size:12px;color:var(--muted);margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand"><span class="t">true</span><span class="x">×</span><span class="l">Lotus's</span></div>
+    <h1>ระบบเบิก Voucher</h1>
+    <p>เบิกวอยเชอร์หลังติดตั้งเสร็จ และยืนยันการส่งมอบให้ลูกค้า</p>
+    <div class="steps">
+      <div data-n="1" class="now">กรอกข้อมูลเบิก</div>
+      <div data-n="2">PBH/CM อนุมัติ</div>
+      <div data-n="3">ส่งมอบใน 3 วัน</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- เข้าใช้งาน -->
+  <div class="card" id="loginCard">
+    <h2>เริ่มต้นใช้งาน</h2>
+    <p class="lead">กรอกรหัสเซลครั้งเดียว เครื่องจะจำไว้ให้ครั้งต่อไป</p>
+    <label for="saleCode">รหัสเซล</label>
+    <input id="saleCode" autocapitalize="characters" autocomplete="off" placeholder="กรอกรหัสเซลของคุณ">
+    <div class="hint" id="loginMsg"></div>
+    <button class="btn-primary" id="btnVerify">ยืนยันรหัส</button>
+  </div>
+
+  <div id="saleBar">
+    <div>
+      <div class="nm" id="saleName"></div>
+      <div class="sub" id="saleSub"></div>
+    </div>
+    <button class="btn-link" id="btnLogout">เปลี่ยนรหัส</button>
+  </div>
+
+  <div id="tabs">
+    <button data-tab="claim" class="on">เบิก Voucher</button>
+    <button data-tab="deliver">ส่งมอบ<span class="badge" id="cntBadge" style="display:none">0</span></button>
+  </div>
+
+  <!-- เบิก -->
+  <div class="card" id="tabClaim" style="display:none">
+    <h2>ข้อมูลงานติดตั้ง</h2>
+    <p class="lead">ต้องติดตั้งเสร็จและ IVR ขึ้น Complete แล้วเท่านั้น</p>
+
+    <label for="cName">ชื่อลูกค้า</label>
+    <input id="cName" placeholder="เช่น พี่สมศรี">
+
+    <label for="cPhone">เบอร์โทร</label>
+    <input id="cPhone" inputmode="numeric" placeholder="08X-XXX-XXXX">
+
+    <label for="cOrder">เลข Order</label>
+    <input id="cOrder" autocomplete="off" placeholder="เลขที่ออเดอร์ในระบบทรู">
+
+    <label for="cIvr">เลข IVR</label>
+    <input id="cIvr" autocomplete="off" placeholder="เลข IVR ของงานนี้">
+
+    <label for="cQty">จำนวนที่ขอเบิก</label>
+    <select id="cQty">
+      <option value="1">1 ใบ</option><option value="2">2 ใบ</option><option value="3">3 ใบ</option>
+      <option value="4">4 ใบ</option><option value="5">5 ใบ</option>
+    </select>
+
+    <label>หลักฐาน — หน้าจอ IVR ที่ Status ขึ้น Complete</label>
+    <label class="upload" id="upClaim">
+      <input type="file" accept="image/*" id="fileClaim">
+      <div id="upClaimBody">
+        <div class="ic">📷</div>
+        <div class="tx">แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง</div>
+        <div class="sb">ให้เห็นคำว่า Complete ชัดเจน</div>
+      </div>
+    </label>
+
+    <div class="hint" id="claimMsg"></div>
+    <button class="btn-primary" id="btnClaim">ส่งเรื่องให้ PBH/CM อนุมัติ</button>
+  </div>
+
+  <!-- ส่งมอบ -->
+  <div id="tabDeliver" style="display:none">
+    <div class="card">
+      <h2>รอส่งมอบให้ลูกค้า</h2>
+      <p class="lead">อนุมัติแล้วต้องส่งมอบและแนบรูปภายใน 3 วัน</p>
+      <div id="listApproved"><div class="empty">กำลังโหลด…</div></div>
+    </div>
+    <div class="card">
+      <h2>รายการที่ผ่านมา</h2>
+      <div id="listOther"><div class="empty">—</div></div>
+    </div>
+  </div>
+
+  <!-- ฟอร์มส่งมอบ -->
+  <div class="card" id="deliverForm" style="display:none">
+    <h2 id="dfTitle">ยืนยันการส่งมอบ</h2>
+    <p class="lead" id="dfSub"></p>
+    <label>รูปตอนส่งมอบวอยเชอร์ให้ลูกค้า</label>
+    <label class="upload" id="upDeliver">
+      <input type="file" accept="image/*" id="fileDeliver">
+      <div id="upDeliverBody">
+        <div class="ic">📷</div>
+        <div class="tx">แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง</div>
+        <div class="sb">ให้เห็นลูกค้าและวอยเชอร์ในรูปเดียวกัน</div>
+      </div>
+    </label>
+    <div class="hint" id="deliverMsg"></div>
+    <button class="btn-primary" id="btnDeliver">ยืนยันส่งมอบแล้ว</button>
+    <button class="btn-ghost" id="btnCancelDeliver" style="margin-top:8px">ย้อนกลับ</button>
+  </div>
+
+  <!-- ผลลัพธ์ -->
+  <div class="card" id="result">
+    <div class="mark">✓</div>
+    <h2 id="resTitle"></h2>
+    <p id="resText"></p>
+    <button class="btn-primary" id="btnBack">กลับหน้าหลัก</button>
+  </div>
+
+  <footer>
+    ใช้ได้เฉพาะทีม True Direct Sales ที่ลงทะเบียนไว้<br>
+    ติดปัญหาการใช้งาน แจ้งในกลุ่มไลน์ได้เลย
+  </footer>
+</div>
+
+<script>
+/* ============ ตั้งค่า ============ */
+// ใช้ URL เดียวกับระบบเก็บ Lead — เป็นสคริปต์ตัวเดียวกัน
+const API = 'https://script.google.com/macros/s/AKfycbz2egqw0Dr1tRNqhLef8sNOs7TQMDqTZ48KhR4HSCY4QUUwq9gGD7rif_Eia2W_mxUpNg/exec';
+const SLA_DAYS = 3;
+
+/* ============ helper ============ */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try{ return localStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k) }catch(e){} }
+};
+let sale=null, claimImg=null, deliverImg=null, currentId=null, cache=[];
+
+async function api(action, payload){
+  let res;
+  try{
+    res = await fetch(API,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action}, payload||{}))
+    });
+  }catch(e){ throw new Error('เชื่อมต่อไม่ได้ ตรวจสอบสัญญาณแล้วลองใหม่'); }
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'ระบบขัดข้อง ลองใหม่อีกครั้ง');
+  return data;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+
+/* ย่อรูปในเครื่องก่อนอัปโหลด */
+function readImage(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1400; let w=img.width, h=img.height;
+        if(Math.max(w,h)>max){ const r=max/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const url=cv.toDataURL('image/jpeg',0.72);
+        resolve({b64:url.split(',')[1], preview:url});
+      };
+      img.onerror=()=>reject(new Error('ไฟล์นี้ไม่ใช่รูปภาพ'));
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function bindUpload(inputId, boxId, bodyId, onDone){
+  $(inputId).addEventListener('change', async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{
+      const r=await readImage(f);
+      $(bodyId).innerHTML='<img src="'+r.preview+'" alt="รูปที่แนบ"><div class="sb" style="margin-top:8px">แตะอีกครั้งเพื่อเปลี่ยนรูป</div>';
+      $(boxId).classList.add('filled');
+      onDone(r.b64);
+    }catch(err){ alert(err.message) }
+  });
+}
+function resetUpload(boxId, bodyId, tx, sb){
+  $(boxId).classList.remove('filled');
+  $(bodyId).innerHTML='<div class="ic">📷</div><div class="tx">'+tx+'</div><div class="sb">'+sb+'</div>';
+}
+function busy(btn,on,label){ btn.disabled=on; btn.textContent=on?'กำลังส่ง…':label }
+function daysLeft(iso){ const d=new Date(iso); d.setDate(d.getDate()+SLA_DAYS); return Math.ceil((d-new Date())/86400000) }
+function say(el, msg, bad){ el.textContent=msg||''; el.classList.toggle('bad', !!bad) }
+
+/* ============ ยืนยันรหัสเซล ============ */
+async function verify(code){
+  say($('loginMsg'),'');
+  if(!code){ say($('loginMsg'),'กรอกรหัสเซลก่อน',true); return }
+  busy($('btnVerify'),true,'ยืนยันรหัส');
+  try{
+    const r=await api('verifySale',{saleCode:code});
+    sale=r.sale; store.set('vsSale', sale.code);
+    $('loginCard').style.display='none';
+    $('saleBar').style.display='flex';
+    $('tabs').style.display='flex';
+    $('saleName').textContent=sale.name;
+    $('saleSub').textContent=sale.code + (sale.province?' · '+sale.province:'');
+    switchTab('claim'); loadList();
+  }catch(err){ say($('loginMsg'), err.message, true) }
+  finally{ busy($('btnVerify'),false,'ยืนยันรหัส') }
+}
+
+/* ============ แท็บ ============ */
+function switchTab(name){
+  $('result').style.display='none';
+  $('deliverForm').style.display='none';
+  $('tabClaim').style.display   = name==='claim'   ? 'block':'none';
+  $('tabDeliver').style.display = name==='deliver' ? 'block':'none';
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.tab===name));
+}
+document.querySelectorAll('#tabs button').forEach(b=>{
+  b.addEventListener('click',()=>{ switchTab(b.dataset.tab); if(b.dataset.tab==='deliver') loadList() });
+});
+
+/* ============ ส่งคำขอเบิก ============ */
+$('btnClaim').addEventListener('click', async ()=>{
+  const p={
+    saleCode: sale.code,
+    customerName: $('cName').value.trim(),
+    phone: $('cPhone').value.trim(),
+    orderNo: $('cOrder').value.trim(),
+    ivrNo: $('cIvr').value.trim(),
+    qty: Number($('cQty').value),
+    image: claimImg
+  };
+  if(!p.customerName||!p.phone||!p.orderNo||!p.ivrNo){ say($('claimMsg'),'กรอกข้อมูลให้ครบทุกช่อง',true); return }
+  if(!p.image){ say($('claimMsg'),'แนบรูปหน้าจอ IVR ก่อนส่ง',true); return }
+  say($('claimMsg'),'');
+  busy($('btnClaim'),true,'ส่งเรื่องให้ PBH/CM อนุมัติ');
+  try{
+    const r=await api('submitClaim',p);
+    ['cName','cPhone','cOrder','cIvr'].forEach(id=>$(id).value='');
+    $('cQty').value='1'; claimImg=null;
+    resetUpload('upClaim','upClaimBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นคำว่า Complete ชัดเจน');
+    showResult('ส่งเรื่องแล้ว','เลขที่ '+r.voucherId+' — แจ้ง PBH/CM ให้ตรวจสอบแล้ว รออนุมัติสักครู่');
+    loadList();
+  }catch(err){ say($('claimMsg'), err.message, true) }
+  finally{ busy($('btnClaim'),false,'ส่งเรื่องให้ PBH/CM อนุมัติ') }
+});
+
+/* ============ รายการของฉัน ============ */
+async function loadList(){
+  try{
+    const r=await api('myVouchers',{saleCode:sale.code});
+    cache=r.items;
+    const approved=cache.filter(v=>v.status==='APPROVED');
+    const other=cache.filter(v=>v.status!=='APPROVED');
+    $('cntBadge').textContent=approved.length;
+    $('cntBadge').style.display=approved.length?'inline-block':'none';
+    $('listApproved').innerHTML = approved.length ? approved.map(cardApproved).join('')
+      : '<div class="empty">ยังไม่มีรายการที่รอส่งมอบ</div>';
+    $('listOther').innerHTML = other.length ? other.slice(0,20).map(cardOther).join('')
+      : '<div class="empty">ยังไม่มีประวัติการเบิก</div>';
+    document.querySelectorAll('[data-deliver]').forEach(b=>b.addEventListener('click',()=>openDeliver(b.dataset.deliver)));
+  }catch(err){ $('listApproved').innerHTML='<div class="empty">'+esc(err.message)+'</div>' }
+}
+function cardApproved(v){
+  const d=daysLeft(v.approveTime);
+  const cls = d<0?'late' : d<=1?'warn':'ok';
+  const txt = d<0 ? ('เกินกำหนดมาแล้ว '+Math.abs(d)+' วัน') : d===0 ? 'ครบกำหนดวันนี้' : ('เหลือเวลาอีก '+d+' วัน');
+  return `<div class="item">
+    <div class="top">
+      <div><div class="cust">${esc(v.customerName)}</div>
+        <div class="meta">Order ${esc(v.orderNo)} · IVR ${esc(v.ivrNo)}</div></div>
+      <span class="qty">${esc(v.qty)} ใบ</span>
+    </div>
+    <span class="due ${cls}">${txt}</span>
+    <button class="btn-ghost" style="margin-top:12px" data-deliver="${esc(v.id)}">แนบรูปส่งมอบ</button>
+  </div>`;
+}
+function cardOther(v){
+  const map={PENDING:['pending','รออนุมัติ'],REJECTED:['rejected','ตีกลับ'],DELIVERED:['done','ส่งมอบแล้ว']};
+  const m=map[v.status]||['','—'];
+  return `<div class="item">
+    <div class="top">
+      <div><div class="cust">${esc(v.customerName)}</div>
+        <div class="meta">Order ${esc(v.orderNo)} · ${esc(v.qty)} ใบ</div></div>
+      <span class="pill ${m[0]}">${m[1]}</span>
+    </div>
+    ${v.rejectReason?'<div class="meta" style="margin-top:9px">เหตุผล: '+esc(v.rejectReason)+'</div>':''}
+  </div>`;
+}
+
+/* ============ ส่งมอบ ============ */
+function openDeliver(id){
+  const v=cache.find(x=>x.id===id); if(!v) return;
+  currentId=id; deliverImg=null;
+  resetUpload('upDeliver','upDeliverBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นลูกค้าและวอยเชอร์ในรูปเดียวกัน');
+  $('dfTitle').textContent='ส่งมอบให้ '+v.customerName;
+  $('dfSub').textContent='Order '+v.orderNo+' · '+v.qty+' ใบ';
+  say($('deliverMsg'),'');
+  $('tabDeliver').style.display='none';
+  $('deliverForm').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('btnCancelDeliver').addEventListener('click',()=>switchTab('deliver'));
+$('btnDeliver').addEventListener('click', async ()=>{
+  if(!deliverImg){ say($('deliverMsg'),'แนบรูปตอนส่งมอบก่อน',true); return }
+  busy($('btnDeliver'),true,'ยืนยันส่งมอบแล้ว');
+  try{
+    await api('submitDeliver',{saleCode:sale.code, voucherId:currentId, image:deliverImg});
+    showResult('บันทึกการส่งมอบแล้ว','รายการนี้ปิดงานเรียบร้อย ขอบคุณครับ');
+    loadList();
+  }catch(err){ say($('deliverMsg'), err.message, true) }
+  finally{ busy($('btnDeliver'),false,'ยืนยันส่งมอบแล้ว') }
+});
+
+/* ============ ผลลัพธ์ ============ */
+function showResult(title,text){
+  $('tabClaim').style.display='none'; $('tabDeliver').style.display='none'; $('deliverForm').style.display='none';
+  $('resTitle').textContent=title; $('resText').textContent=text;
+  $('result').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('btnBack').addEventListener('click',()=>switchTab('claim'));
+
+/* ============ bind ============ */
+bindUpload('fileClaim','upClaim','upClaimBody', b64=>claimImg=b64);
+bindUpload('fileDeliver','upDeliver','upDeliverBody', b64=>deliverImg=b64);
+$('btnVerify').addEventListener('click',()=>verify($('saleCode').value.trim()));
+$('saleCode').addEventListener('keydown',e=>{ if(e.key==='Enter') verify($('saleCode').value.trim()) });
+$('btnLogout').addEventListener('click',()=>{ store.del('vsSale'); location.reload() });
+
+const saved=store.get('vsSale');
+if(saved){ $('saleCode').value=saved; verify(saved) }
+</script>
+</body>
+</html>
