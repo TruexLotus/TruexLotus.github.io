@@ -99,6 +99,10 @@ button{font-family:inherit;font-size:16px;font-weight:600;border-radius:12px;cur
 .item .cust{font-weight:600;font-size:15px}
 .item .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
 .qty{font-size:12px;font-weight:600;background:#F4F0EC;border-radius:8px;padding:4px 9px;white-space:nowrap}
+.qtypick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.qtypick button{font-family:inherit;font-size:19px;font-weight:700;padding:16px 8px;border-radius:12px;
+  border:1.5px solid #E8E5E0;background:#fff;color:#1A1A1A;cursor:pointer}
+.qtypick button.on{border-color:#E3001B;background:#FDEEF0;color:#E3001B}
 .due{display:inline-block;font-size:12.5px;font-weight:500;border-radius:8px;padding:4px 10px;margin-top:11px}
 .due.ok{background:#EFF7F2;color:var(--green)}
 .due.warn{background:#FFF6E5;color:var(--amber)}
@@ -164,23 +168,14 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:26px;line-
     <h2>ข้อมูลงานติดตั้ง</h2>
     <p class="lead">ต้องติดตั้งเสร็จและ IVR ขึ้น Complete แล้วเท่านั้น</p>
 
-    <label for="cName">ชื่อลูกค้า</label>
-    <input id="cName" placeholder="เช่น พี่สมศรี">
-
-    <label for="cPhone">เบอร์โทร</label>
-    <input id="cPhone" inputmode="numeric" placeholder="08X-XXX-XXXX">
-
     <label for="cOrder">เลข Order</label>
     <input id="cOrder" autocomplete="off" placeholder="เลขที่ออเดอร์ในระบบทรู">
 
-    <label for="cIvr">เลข IVR</label>
-    <input id="cIvr" autocomplete="off" placeholder="เลข IVR ของงานนี้">
-
-    <label for="cQty">จำนวนที่ขอเบิก</label>
-    <select id="cQty">
-      <option value="1">1 ใบ</option><option value="2">2 ใบ</option><option value="3">3 ใบ</option>
-      <option value="4">4 ใบ</option><option value="5">5 ใบ</option>
-    </select>
+    <label>จำนวนวอยเชอร์ที่เบิก</label>
+    <div class="qtypick" id="cQtyPick">
+      <button type="button" data-v="150">150</button>
+      <button type="button" data-v="300">300</button>
+    </div>
 
     <label>หลักฐาน — หน้าจอ IVR ที่ Status ขึ้น Complete</label>
     <label class="upload" id="upClaim">
@@ -255,6 +250,14 @@ const store = {
   del(k){ try{ localStorage.removeItem(k) }catch(e){} }
 };
 let sale=null, claimImg=null, deliverImg=null, currentId=null, cache=[];
+let claimQty = null;   // จำนวนวอยเชอร์ที่เลือก มีแค่ 150 กับ 300
+
+document.getElementById('cQtyPick').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  [...b.parentElement.children].forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  claimQty = Number(b.dataset.v);
+});
 
 async function api(action, payload){
   let res;
@@ -345,21 +348,21 @@ document.querySelectorAll('#tabs button').forEach(b=>{
 $('btnClaim').addEventListener('click', async ()=>{
   const p={
     saleCode: sale.code,
-    customerName: $('cName').value.trim(),
-    phone: $('cPhone').value.trim(),
     orderNo: $('cOrder').value.trim(),
-    ivrNo: $('cIvr').value.trim(),
-    qty: Number($('cQty').value),
+    qty: Number(claimQty),
     image: claimImg
   };
-  if(!p.customerName||!p.phone||!p.orderNo||!p.ivrNo){ say($('claimMsg'),'กรอกข้อมูลให้ครบทุกช่อง',true); return }
-  if(!p.image){ say($('claimMsg'),'แนบรูปหน้าจอ IVR ก่อนส่ง',true); return }
+  if(!p.orderNo){ say($('claimMsg'),'กรอกเลข Order ก่อน',true); return }
+  if(!claimQty){ say($('claimMsg'),'เลือกจำนวนวอยเชอร์ที่เบิก',true); return }
+  if(!p.image){ say($('claimMsg'),'แนบรูปหน้าจอ IVR ที่ขึ้น Complete ก่อนส่ง',true); return }
   say($('claimMsg'),'');
   busy($('btnClaim'),true,'ส่งเรื่องให้ PBH/CM อนุมัติ');
   try{
     const r=await api('submitClaim',p);
-    ['cName','cPhone','cOrder','cIvr'].forEach(id=>$(id).value='');
-    $('cQty').value='1'; claimImg=null;
+    $('cOrder').value='';
+    claimQty = null;
+    document.querySelectorAll('#cQtyPick button').forEach(b=>b.classList.remove('on'));
+    claimImg=null;
     resetUpload('upClaim','upClaimBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นคำว่า Complete ชัดเจน');
     showResult('ส่งเรื่องแล้ว','เลขที่ '+r.voucherId+' — แจ้ง PBH/CM ให้ตรวจสอบแล้ว รออนุมัติสักครู่');
     loadList();
@@ -389,9 +392,9 @@ function cardApproved(v){
   const txt = d<0 ? ('เกินกำหนดมาแล้ว '+Math.abs(d)+' วัน') : d===0 ? 'ครบกำหนดวันนี้' : ('เหลือเวลาอีก '+d+' วัน');
   return `<div class="item">
     <div class="top">
-      <div><div class="cust">${esc(v.customerName)}</div>
-        <div class="meta">Order ${esc(v.orderNo)} · IVR ${esc(v.ivrNo)}</div></div>
-      <span class="qty">${esc(v.qty)} ใบ</span>
+      <div><div class="cust">Order ${esc(v.orderNo)}</div>
+        <div class="meta">เบิก ${esc(v.qty)}</div></div>
+      <span class="qty">${esc(v.qty)}</span>
     </div>
     <span class="due ${cls}">${txt}</span>
     <button class="btn-ghost" style="margin-top:12px" data-deliver="${esc(v.id)}">แนบรูปส่งมอบ</button>
@@ -402,8 +405,8 @@ function cardOther(v){
   const m=map[v.status]||['','—'];
   return `<div class="item">
     <div class="top">
-      <div><div class="cust">${esc(v.customerName)}</div>
-        <div class="meta">Order ${esc(v.orderNo)} · ${esc(v.qty)} ใบ</div></div>
+      <div><div class="cust">Order ${esc(v.orderNo)}</div>
+        <div class="meta">เบิก ${esc(v.qty)}</div></div>
       <span class="pill ${m[0]}">${m[1]}</span>
     </div>
     ${v.rejectReason?'<div class="meta" style="margin-top:9px">เหตุผล: '+esc(v.rejectReason)+'</div>':''}
@@ -415,8 +418,8 @@ function openDeliver(id){
   const v=cache.find(x=>x.id===id); if(!v) return;
   currentId=id; deliverImg=null;
   resetUpload('upDeliver','upDeliverBody','แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง','ให้เห็นลูกค้าและวอยเชอร์ในรูปเดียวกัน');
-  $('dfTitle').textContent='ส่งมอบให้ '+v.customerName;
-  $('dfSub').textContent='Order '+v.orderNo+' · '+v.qty+' ใบ';
+  $('dfTitle').textContent='ส่งมอบ Order '+v.orderNo;
+  $('dfSub').textContent='จำนวน '+v.qty;
   say($('deliverMsg'),'');
   $('tabDeliver').style.display='none';
   $('deliverForm').style.display='block';
