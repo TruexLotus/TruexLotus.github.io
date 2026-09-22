@@ -391,7 +391,7 @@ async function gasFetch_(url, options, onRetry){
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20000);
     try{
-      const res = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+      const res = await fetch(url, Object.assign({ credentials:'omit' }, options, { signal: controller.signal }));
       clearTimeout(timer);
       return res;
     }catch(err){
@@ -747,7 +747,7 @@ async function refreshBranches_(){
   const url = gasUrl();
   if(!url) return;
   try{
-    const res = await fetch(url + '?action=listBranches');
+    const res = await fetch(url + '?action=listBranches', { credentials:'omit' });
     const data = await res.json();
     if(!data.ok || !Array.isArray(data.branches)) return;
 

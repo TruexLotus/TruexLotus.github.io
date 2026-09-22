@@ -258,16 +258,21 @@ document.getElementById('cQtyPick').addEventListener('click', e=>{
   claimValue = Number(b.dataset.v);
 });
 
+// credentials:'omit' กันปัญหาคนที่ล็อกอิน Google หลายบัญชีในเครื่องเดียว
 async function api(action, payload){
-  let res;
+  let text;
   try{
-    res = await fetch(API,{
+    const res = await fetch(API,{
       method:'POST',
+      credentials:'omit',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(Object.assign({action}, payload||{}))
     });
+    text = await res.text();
   }catch(e){ throw new Error('เชื่อมต่อไม่ได้ ตรวจสอบสัญญาณแล้วลองใหม่'); }
-  const data = await res.json();
+  let data;
+  try{ data = JSON.parse(text); }
+  catch(e){ throw new Error('ระบบของ Google ตอบกลับผิดรูปแบบ ลองใหม่อีกครั้ง'); }
   if(!data.ok) throw new Error(data.error || 'ระบบขัดข้อง ลองใหม่อีกครั้ง');
   return data;
 }

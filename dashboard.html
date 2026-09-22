@@ -302,8 +302,7 @@ async function load(fresh){
   show('loading');
   try{
     const url = GAS_URL + '?action=dashboard' + (fresh ? '&fresh=1' : '');
-    const res = await fetchRetry_(url);
-    const json = await res.json();
+    const json = await fetchRetry_(url);
     if(!json.ok) throw new Error(json.error || 'ข้อมูลไม่ถูกต้อง');
     DATA = json;
     buildFilters();
@@ -320,17 +319,24 @@ async function load(fresh){
 // รอไม่เกิน 25 วิ ถ้าพลาดลองซ้ำอีก 2 ครั้ง
 // ใช้ Promise.race แทน AbortController เพราะบางสภาพแวดล้อม (เช่นหน้าพรีวิวในแชท)
 // ส่ง AbortSignal ข้ามกล่องไม่ได้ แล้วจะพังตั้งแต่ยังไม่ได้ยิงออกไป
+// credentials:'omit' = ไม่แนบข้อมูลล็อกอิน Google ไปด้วย
+// ระบบเปิดให้ "ทุกคน" อยู่แล้วจึงไม่ต้องใช้ และถ้าแนบไป คนที่ล็อกอินหลายบัญชี
+// จะได้หน้า error ของ Google กลับมาแทนข้อมูล
+// ถ้าได้ของที่ไม่ใช่ JSON กลับมา ก็ถือว่าพลาดแล้วลองใหม่ (ปัญหาชั่วคราวฝั่ง Google มักหายเมื่อลองซ้ำ)
 async function fetchRetry_(url){
   let lastErr;
   for(let i=0;i<3;i++){
     try{
-      return await Promise.race([
-        fetch(url),
+      const res = await Promise.race([
+        fetch(url, { credentials:'omit' }),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('หมดเวลารอ')), 25000))
       ]);
+      const text = await res.text();
+      try{ return JSON.parse(text); }
+      catch(parseErr){ throw new Error('ระบบของ Google ตอบกลับผิดรูปแบบ'); }
     }catch(e){
       lastErr = e;
-      if(i<2) await new Promise(r=>setTimeout(r, 1200*(i+1)));
+      if(i<2) await new Promise(r=>setTimeout(r, 1500*(i+1)));
     }
   }
   throw lastErr;
