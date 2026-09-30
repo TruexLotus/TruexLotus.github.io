@@ -670,11 +670,21 @@ function outboxAdd_(lead){
   const list = outboxGet_(); list.push(lead); outboxSet_(list);
 }
 
+// ล็อกข้ามแท็บ: ถ้าเปิดหน้าเว็บไว้หลายแท็บ ให้ส่งได้ทีละแท็บ
+function outboxLock_(){
+  const now = Date.now(), t = Number(localStorage.getItem('lead_outbox_lock') || 0);
+  if(now - t < 60000) return false;
+  localStorage.setItem('lead_outbox_lock', String(now));
+  return true;
+}
+function outboxUnlock_(){ localStorage.removeItem('lead_outbox_lock'); }
+
 async function flushOutbox_(){
   if(outboxFlushing) return;
   const url = gasUrl();
   if(!url){ renderOutbox_(); return; }
   if(!outboxGet_().length){ renderOutbox_(); return; }
+  if(!outboxLock_()) return;
   outboxFlushing = true; outboxLastError = ''; renderOutbox_();
   try{
     let box = outboxGet_();
@@ -691,6 +701,7 @@ async function flushOutbox_(){
     outboxLastError = 'เน็ตไม่เสถียร ระบบจะลองส่งใหม่เอง';
   }finally{
     outboxFlushing = false;
+    outboxUnlock_();
     renderOutbox_();
   }
 }
