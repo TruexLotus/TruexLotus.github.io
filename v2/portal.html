@@ -93,6 +93,8 @@ function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','
 function dkey(k){ const a = String(k).split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
 function thDate(k){ const d = dkey(k); return d.getDate() + ' ' + TH_MON[d.getMonth()]; }
 function thDay(k){ const d = dkey(k); return TH_DAY[d.getDay()] + ' ' + thDate(k); }
+const TH_DAY_S = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+function weekLabel(mon){ return thDate(mon) + ' – ' + thDate(addK(mon,6)); }
 function addK(k, n){ const d = dkey(k); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function toast(t){ const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; document.body.appendChild(el); setTimeout(()=>el.remove(), 2600); }
 function loadSession(){ try{ const s = JSON.parse(localStorage.getItem(SKEY) || 'null'); return s && s.exp > Date.now() ? s : null; }catch(e){ return null; } }
@@ -193,17 +195,22 @@ async function loadHome(){
 }
 
 function renderHome(){
-  const h = HOME, p = h.plan, r = h.report;
-  const planLine = p ? (p.type === 'skip'
-      ? `<div class="step"><div class="dot skip"></div><div><div class="h">ขอข้ามแล้ว</div><div class="mut">${esc(p.reason)}${p.note ? ' · ' + esc(p.note) : ''}</div></div></div>`
-      : `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">ส่งแผนเดินแล้ว</div><div class="mut">${p.branches.map(esc).join(' · ')}</div></div></div>`)
-    : `<div class="step"><div class="dot wait"></div><div><div class="h">กดแผนเดิน หรือขอข้าม</div><div class="mut" style="color:var(--amber)">ภายใน พฤหัสบดี ${thDate(addK(h.planSat,-2))} 18:00</div></div></div>`;
-  let repLine = '';
-  if(h.reportOpen && h.reportPlanned){
-    repLine = r ? `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">กรอกยอดแล้ว · ปิดทรู ${r.trueClosed}</div><div class="mut">แก้ได้ถึง อาทิตย์ ${thDate(addK(h.reportDate,1))}</div></div></div>`
-                : `<div class="step"><div class="dot wait"></div><div><div class="h">กรอกยอดหลังวันเดิน</div><div class="mut" style="color:var(--amber)">กรอกได้ถึง อาทิตย์ ${thDate(addK(h.reportDate,1))}</div></div></div>`;
+  const h = HOME, w = h.week, p = w.plan, rt = h.reportTarget;
+  let planLine;
+  if(!p) planLine = `<div class="step"><div class="dot wait"></div><div><div class="h">เลือกวันเดิน หรือขอข้าม</div><div class="mut" style="color:var(--amber)">ภายใน พฤหัสบดี ${thDate(addK(w.mon,3))} 18:00</div></div></div>`;
+  else if(p.type === 'skip') planLine = `<div class="step"><div class="dot skip"></div><div><div class="h">ขอข้ามสัปดาห์นี้</div><div class="mut">${esc(p.reason)}${p.note ? ' · ' + esc(p.note) : ''}</div></div></div>`;
+  else planLine = `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">นัดเดิน ${thDay(p.walkDate)}</div><div class="mut">${p.branches.map(esc).join(' · ')}</div></div></div>`;
+  // ยอด: โชว์เมื่อถึงวันเดินแล้ว
+  let repLine = '', needRep = false, repDone = false;
+  if(rt.planned){
+    needRep = true; repDone = !!rt.report;
+    repLine = repDone ? `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">กรอกยอดแล้ว · ปิดทรู ${rt.report.trueClosed}</div><div class="mut">แก้ได้ถึง ${thDay(addK(rt.date,1))}</div></div></div>`
+                      : `<div class="step"><div class="dot wait"></div><div><div class="h">กรอกยอดวันเดิน ${thDay(rt.date)}</div><div class="mut" style="color:var(--amber)">กรอกได้ถึง ${thDay(addK(rt.date,1))}</div></div></div>`;
+  }else if(p && p.type === 'walk' && w.report){
+    repLine = `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">กรอกยอดแล้ว · ปิดทรู ${w.report.trueClosed}</div></div></div>`;
   }
-  const done = (p ? 1 : 0) + (h.reportOpen && h.reportPlanned && r ? 1 : 0), total = 1 + (h.reportOpen && h.reportPlanned ? 1 : 0);
+  const done = (p ? 1 : 0) + (repDone ? 1 : 0), total = 1 + (needRep ? 1 : 0);
+  const np = h.nextWeek.plan;
   $app.innerHTML = `
   <div class="hdr">
     <div class="sm">สวัสดี</div><div class="lg">${esc(h.user.name)}</div>
@@ -211,9 +218,10 @@ function renderHome(){
   </div>
   <div class="wrap">
     <div class="card">
-      <div class="row"><div class="h">สัปดาห์นี้ · เสาร์ ${thDate(h.planSat)}</div>
+      <div class="row"><div class="h">สัปดาห์นี้ · ${weekLabel(w.mon)}</div>
         <span class="st ${done === total ? 'green' : 'amber'}">${done} / ${total} เสร็จ</span></div>
       ${planLine}${repLine}
+      ${np ? `<div class="mut" style="margin-top:12px">สัปดาห์หน้า: ${np.type === 'skip' ? 'ขอข้าม' : 'นัดเดิน ' + thDay(np.walkDate)}</div>` : ''}
     </div>
     <div class="grid3">
       <button class="tile" onclick="renderPlan()">${ICON.cal}<span>แผนเดิน /<br>ขอข้าม</span></button>
@@ -246,17 +254,28 @@ function bar(title, sub, warn){
 }
 
 // ---------- แผนเดิน / ขอข้าม ----------
-function renderPlan(){
-  const h = HOME, p = h.plan || {};
+function renderPlan(which){
+  const h = HOME;
+  const W = which === 'next' ? h.nextWeek : h.week;
+  const p = W.plan || {};
   let mode = p.type === 'skip' ? 'skip' : 'walk';
+  let day = p.type === 'walk' && p.walkDate >= h.today ? p.walkDate : '';
   const picked = new Set(p.type === 'walk' ? p.branches : h.branches.map(b => b.name));
   let reason = p.reason || '';
   const draw = () => {
-    $app.innerHTML = bar('แผนเดิน · เสาร์ ' + thDate(h.planSat), 'ส่งภายใน พฤหัสบดี ' + thDate(addK(h.planSat,-2)) + ' 18:00', true) + `
+    const note = document.getElementById('note') ? document.getElementById('note').value : (p.type === 'skip' ? p.note : '');
+    $app.innerHTML = bar('แผนเดิน', 'เดินสัปดาห์ละ 1 วัน · เลือกวันที่สะดวก', false) + `
     <div class="wrap">
-      <div class="seg"><button class="${mode==='walk'?'on':''}" data-m="walk">เดินสัปดาห์นี้</button><button class="${mode==='skip'?'on':''}" data-m="skip">ขอข้าม</button></div>
+      <div class="seg"><button class="${which!=='next'?'on':''}" data-w="this">สัปดาห์นี้ · ${weekLabel(h.week.mon)}</button><button class="${which==='next'?'on':''}" data-w="next">สัปดาห์หน้า</button></div>
+      <div class="seg"><button class="${mode==='walk'?'on':''}" data-m="walk">เดิน</button><button class="${mode==='skip'?'on':''}" data-m="skip">ขอข้าม</button></div>
       ${mode === 'walk' ? `
-        <div class="h">เลือกสาขาที่จะเดิน (เลือกได้หลายสาขา)</div>
+        <div class="h">วันที่จะเดิน</div>
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">
+          ${W.days.map(d => { const past = d < h.today, on = d === day; const dd = dkey(d);
+            return `<button data-d="${d}" ${past ? 'disabled' : ''} style="border-radius:12px;padding:8px 0;border:1.5px solid ${on ? 'var(--navy)' : 'var(--ice-line)'};background:${on ? 'var(--navy)' : past ? 'var(--grey-bg)' : '#fff'};color:${on ? '#fff' : past ? '#A0AABB' : 'var(--navy)'};cursor:${past?'default':'pointer'}">
+              <div style="font-size:12px">${TH_DAY_S[dd.getDay()]}</div><div style="font-size:17px;font-weight:600">${dd.getDate()}</div></button>`; }).join('')}
+        </div>
+        <div class="h">สาขาที่จะเดิน (เลือกได้หลายสาขา)</div>
         <div class="list">
           ${h.branches.map((b,i) => `<label class="li"><input type="checkbox" class="chk" data-i="${i}" ${picked.has(b.name)?'checked':''}>
             <span><span style="font-size:15px;font-weight:500;display:block">${esc(b.name)}</span>
@@ -264,22 +283,27 @@ function renderPlan(){
           <button class="li" onclick="renderBranch()" style="width:100%;background:none;border:none;color:var(--red);font-size:15px;font-weight:600;cursor:pointer;text-align:left">
             <span style="width:22px;height:22px;border-radius:6px;border:1.5px dashed var(--red);display:flex;align-items:center;justify-content:center">+</span>ลงทะเบียนสาขาใหม่</button>
         </div>` : `
-        <div class="h">เหตุผลที่ไม่เดินสัปดาห์นี้</div>
+        <div class="h">เหตุผลที่ไม่เดิน${which==='next' ? 'สัปดาห์หน้า' : 'สัปดาห์นี้'}</div>
         <div class="pills">${h.skipReasons.map(x => `<button class="pill ${reason===x?'on':''}" data-r="${esc(x)}">${esc(x)}</button>`).join('')}</div>
         <div><label class="f mut" for="note" style="font-weight:400">รายละเอียดเพิ่มเติม${reason==='อื่นๆ' ? '' : ' (ไม่บังคับ)'}</label>
-          <textarea id="note" class="t">${esc(p.type==='skip' ? p.note : '')}</textarea></div>`}
+          <textarea id="note" class="t">${esc(note)}</textarea></div>`}
       <div id="m"></div>
     </div>
-    <div class="foot"><button class="btn" id="save">${mode==='walk' ? 'ส่งแผนเดิน · ' + picked.size + ' สาขา' : 'ส่งคำขอข้าม'}</button></div>`;
-    document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
-    document.querySelectorAll('.chk').forEach(c => c.onchange = () => { const n = h.branches[c.dataset.i].name; c.checked ? picked.add(n) : picked.delete(n);
-      document.getElementById('save').textContent = 'ส่งแผนเดิน · ' + picked.size + ' สาขา'; });
-    document.querySelectorAll('.pill').forEach(b => b.onclick = () => { const n = document.getElementById('note').value; reason = b.dataset.r; draw(); document.getElementById('note').value = n; });
+    <div class="foot"><button class="btn" id="save"></button></div>`;
+    const label = () => { document.getElementById('save').textContent = mode === 'walk'
+      ? (day ? 'ส่งแผน · ' + thDay(day) + ' · ' + picked.size + ' สาขา' : 'เลือกวันที่จะเดิน') : 'ส่งคำขอข้าม'; };
+    label();
+    document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => renderPlan(b.dataset.w === 'next' ? 'next' : ''));
+    document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
+    document.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { day = b.dataset.d; draw(); });
+    document.querySelectorAll('.chk').forEach(c => c.onchange = () => { const n = h.branches[c.dataset.i].name; c.checked ? picked.add(n) : picked.delete(n); label(); });
+    document.querySelectorAll('.pill').forEach(b => b.onclick = () => { reason = b.dataset.r; draw(); });
     document.getElementById('save').onclick = async (ev) => {
+      if(mode === 'walk' && !day){ document.getElementById('m').innerHTML = '<div class="msg err">เลือกวันที่จะเดินก่อน</div>'; return; }
       ev.target.disabled = true;
       try{
-        await api('p_savePlan', mode === 'walk' ? { weekOf:h.planSat, type:'walk', branches:[...picked] }
-                                                : { weekOf:h.planSat, type:'skip', reason, note: document.getElementById('note').value });
+        await api('p_savePlan', mode === 'walk' ? { weekOf:W.mon, type:'walk', walkDate:day, branches:[...picked] }
+                                                : { weekOf:W.mon, type:'skip', reason, note: document.getElementById('note').value });
         toast(mode === 'walk' ? 'ส่งแผนเดินแล้ว' : 'ส่งคำขอข้ามแล้ว'); loadHome();
       }catch(e){ ev.target.disabled = false; document.getElementById('m').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
     };
@@ -288,33 +312,40 @@ function renderPlan(){
 }
 
 // ---------- กรอกยอด ----------
-function renderReport(){
-  const h = HOME;
-  if(!h.reportOpen){
-    $app.innerHTML = bar('กรอกยอด', '') + `<div class="wrap"><div class="card ice"><div class="h">ยังไม่ถึงเวลากรอกยอด</div>
-      <div class="mut" style="margin-top:6px">กรอกได้ตั้งแต่วันเสาร์ ${thDate(h.planSat)} ถึงวันอาทิตย์ ${thDate(addK(h.planSat,1))}</div></div></div>`; return;
+function renderReport(pickDate){
+  const h = HOME, rt = h.reportTarget;
+  let date = rt.planned ? rt.date : (pickDate || '');
+  if(!rt.planned && !date){
+    // ไม่มีแผนเดินที่อยู่ในช่วงกรอก ให้เลือกว่าเดินวันนี้หรือเมื่อวาน
+    $app.innerHTML = bar('กรอกยอด', '') + `<div class="wrap">
+      <div class="card ice"><div class="h">ไม่มีวันเดินที่อยู่ในช่วงกรอกยอด</div>
+        <div class="mut" style="margin-top:6px">กรอกยอดได้ตั้งแต่วันเดินจนถึงวันถัดไป ถ้าวันนี้หรือเมื่อวานเดินจริงแต่ไม่ได้กดแผนไว้ เลือกวันด้านล่าง</div></div>
+      ${rt.choices.map(d => `<button class="btn ghost sm" onclick="renderReport('${d}')">เดิน${thDay(d)}${rt.reports[d] ? ' · กรอกแล้ว' : ''}</button>`).join('')}
+    </div>`;
+    return;
   }
-  const r = h.report || { salesOut:0, trueClosed:0, trueDeciding:0, note:'' };
+  const r = (rt.planned ? rt.report : rt.reports[date]) || { salesOut:0, trueClosed:0, trueDeciding:0, note:'' };
   const v = { salesOut:r.salesOut, trueClosed:r.trueClosed, trueDeciding:r.trueDeciding };
   const F = [['salesOut','เซลที่ออกเดิน',''],['trueClosed','ปิดเน็ตทรูได้ (Sub)','var(--red)'],['trueDeciding','รอตัดสินใจเน็ตทรู','']];
-  $app.innerHTML = bar('กรอกยอด · เสาร์ ' + thDate(h.reportDate), 'กรอกได้ถึง อาทิตย์ ' + thDate(addK(h.reportDate,1)) + ' (1 วันหลังเดิน)', true) + `
+  const leads = (h.leadsByDate || {})[date] || 0;
+  $app.innerHTML = bar('กรอกยอด · ' + thDay(date), 'กรอกได้ถึง ' + thDay(addK(date,1)) + ' (1 วันหลังเดิน)', true) + `
   <div class="wrap">
-    ${h.reportPlanned ? '' : '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">สัปดาห์นี้ไม่ได้กดแผนเดินไว้ ถ้าเดินจริงกรอกยอดได้ตามปกติ</div>'}
-    <div class="card ice row"><div><div class="mut">Lead โลตัสที่เข้าระบบวันนี้</div><div class="mut" style="font-size:12px">ดึงอัตโนมัติ ไม่ต้องกรอก</div></div>
-      <b style="font-size:28px">${h.leadsOnReportDate}</b></div>
+    ${rt.planned ? '' : '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">วันนี้ไม่ได้อยู่ในแผนเดิน ถ้าเดินจริงกรอกยอดได้ตามปกติ</div>'}
+    <div class="card ice row"><div><div class="mut">Lead โลตัสที่เข้าระบบวันนั้น</div><div class="mut" style="font-size:12px">ดึงอัตโนมัติ ไม่ต้องกรอก</div></div>
+      <b style="font-size:28px">${leads}</b></div>
     <div class="list">${F.map(([k,l,c]) => `<div class="li" style="justify-content:space-between">
       <span style="font-size:15px;font-weight:${c?600:500};color:${c||'inherit'}">${l}</span>
       <div class="stepper"><button aria-label="ลด" data-k="${k}" data-d="-1">−</button><b id="v_${k}" style="color:${c||'inherit'}">${v[k]}</b><button aria-label="เพิ่ม" data-k="${k}" data-d="1">+</button></div></div>`).join('')}</div>
     <div><label class="f" for="note">หมายเหตุ (ไม่บังคับ)</label><textarea id="note" class="t">${esc(r.note)}</textarea></div>
-    <div class="mut">ส่งแล้วกลับมาแก้ได้จนถึงวันอาทิตย์ ถ้ามีเซลปิดได้เพิ่มทีหลัง</div>
+    <div class="mut">ส่งแล้วกลับมาแก้ได้จนถึง ${thDay(addK(date,1))} ถ้ามีเซลปิดได้เพิ่มทีหลัง</div>
     <div id="m"></div>
   </div>
-  <div class="foot"><button class="btn" id="save">${h.report ? 'บันทึกการแก้ไข' : 'ส่งยอด'}</button></div>`;
+  <div class="foot"><button class="btn" id="save">${(rt.planned ? rt.report : rt.reports[date]) ? 'บันทึกการแก้ไข' : 'ส่งยอด'}</button></div>`;
   document.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
     const k = b.dataset.k; v[k] = Math.max(0, v[k] + Number(b.dataset.d)); document.getElementById('v_' + k).textContent = v[k]; });
   document.getElementById('save').onclick = async (ev) => {
     ev.target.disabled = true;
-    try{ await api('p_saveReport', Object.assign({ walkDate:h.reportDate, note:document.getElementById('note').value }, v)); toast('บันทึกยอดแล้ว'); loadHome(); }
+    try{ await api('p_saveReport', Object.assign({ walkDate:date, note:document.getElementById('note').value }, v)); toast('บันทึกยอดแล้ว'); loadHome(); }
     catch(e){ ev.target.disabled = false; document.getElementById('m').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
   };
 }
@@ -409,9 +440,9 @@ async function renderDash(){
           <div class="kpi"><b>${d.month.leads}</b><span>Lead โลตัส</span></div>
           <div class="kpi"><b style="color:var(--red)">${d.month.trueClosed}</b><span>ปิดเน็ตทรู</span></div>
           <div class="kpi"><b style="color:var(--green)">${d.month.lotusClosed}</b><span>โลตัสปิดได้</span></div></div></div>
-      <div class="card"><div class="h">Lead รายสัปดาห์ · 8 สัปดาห์ล่าสุด</div>
+      <div class="card"><div class="h">Lead รายสัปดาห์ · 8 สัปดาห์ล่าสุด</div><div class="mut" style="font-size:12px">วันที่คือวันจันทร์ของสัปดาห์</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
-        ${d.weeks.map(w => `<div class="wk"><span>${thDate(w.sat)}</span><span class="tr"><i style="width:${w.leads/mx*100}%"></i></span><b style="text-align:right">${w.leads}</b></div>
+        ${d.weeks.map(w => `<div class="wk"><span>${thDate(w.mon)}</span><span class="tr"><i style="width:${w.leads/mx*100}%"></i></span><b style="text-align:right">${w.leads}</b></div>
           <div class="mut" style="font-size:12px;margin:-6px 0 0 70px">ปิดทรู ${w.trueClosed} · โลตัสปิด ${w.lotusClosed} · เซล ${w.salesOut}</div>`).join('')}
         </div></div>
       <div class="list"><div class="h" style="padding:14px 16px 4px">Lead แยกสาขา · 70 วันล่าสุด</div>
@@ -430,7 +461,7 @@ function tabs(on){
 let AF = 'todo', AR = '';
 function renderAdmin(){
   const h = HOME;
-  const title = h.focus === 'plan' ? 'แผนเดิน เสาร์ ' + thDate(h.focusSat) : h.focus === 'today' ? 'วันเดิน เสาร์ ' + thDate(h.focusSat) : 'ผลเสาร์ ' + thDate(h.focusSat);
+  const title = (h.weekOffset === -1 ? 'สัปดาห์ก่อน · ' : 'สัปดาห์นี้ · ') + weekLabel(h.weekMon);
   let rows = h.rows;
   if(AF === 'todo') rows = rows.filter(r => r.level === 'red' || r.level === 'grey');
   if(AR) rows = rows.filter(r => r.region === AR);
@@ -442,8 +473,9 @@ function renderAdmin(){
       <div class="card" style="padding:12px"><b style="font-size:24px;color:var(--amber)">${h.counts.amber}</b><div class="mut" style="font-size:12px">ขอข้าม</div></div>
       <div class="card" style="padding:12px"><b style="font-size:24px;color:var(--danger)">${h.counts.red}</b><div class="mut" style="font-size:12px">ต้องตาม</div></div>
     </div>
+    <div class="seg"><button class="${h.weekOffset===0?'on':''}" data-wk="0">สัปดาห์นี้</button><button class="${h.weekOffset===-1?'on':''}" data-wk="-1">สัปดาห์ก่อน</button></div>
     <div class="card grid3" style="padding:12px 14px">
-      <div><b style="font-size:18px">${h.totals.weekLeads}</b><div class="mut" style="font-size:12px">Lead เสาร์ ${thDate(h.lastSat)}</div></div>
+      <div><b style="font-size:18px">${h.totals.weekLeads}</b><div class="mut" style="font-size:12px">Lead สัปดาห์นี้</div></div>
       <div><b style="font-size:18px;color:var(--red)">${h.totals.trueClosed}</b><div class="mut" style="font-size:12px">ปิดเน็ตทรู</div></div>
       <div><b style="font-size:18px">${h.totals.openIssues}</b><div class="mut" style="font-size:12px">ปัญหาค้าง</div></div>
     </div>
@@ -458,6 +490,10 @@ function renderAdmin(){
     <button class="btn ghost sm" onclick="logout()">ออกจากระบบ</button>
   </div>${tabs('home')}`;
   document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { AF = b.dataset.f; renderAdmin(); });
+  document.querySelectorAll('[data-wk]').forEach(b => b.onclick = async () => {
+    $app.innerHTML = '<div class="center">กำลังโหลด...</div>';
+    try{ HOME = await api('p_home', { weekOffset: Number(b.dataset.wk) }); renderAdmin(); }catch(e){ toast(e.message); }
+  });
   document.getElementById('rg').onchange = e => { AR = e.target.value; renderAdmin(); };
 }
 async function renderAdminIssues(){
