@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PBH Portal · True x Lotus's</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+<style>
+:root{--red:#C8001E;--red-soft:#FFF1F3;--red-line:#F3C2CA;--navy:#0B1F4B;--muted:#55627A;--bg:#F4F7FB;--card:#FFFFFF;
+  --line:#D8E3EF;--ice:#EAF3FB;--ice-line:#C9DCEE;--green:#0B7A4B;--green-bg:#E3F4EC;--amber:#9A5B00;--amber-bg:#FFF4DE;
+  --danger:#B3162A;--danger-bg:#FDECEE;--grey-bg:#EEF1F5}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--navy);font-family:'Prompt',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding-bottom:env(safe-area-inset-bottom)}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+button,input,textarea,select{font-family:inherit;color:inherit}
+a{color:var(--red)}
+.hdr{background:var(--red);color:#fff;padding:calc(20px + env(safe-area-inset-top)) 20px 20px}
+.hdr.navy{background:var(--navy)}
+.hdr .sm{font-size:13px;opacity:.9}.hdr .lg{font-size:22px;font-weight:700;margin-top:2px}
+.chip{display:inline-block;font-size:13px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px;margin-top:6px}
+.bar{background:#fff;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;border-bottom:1px solid var(--line)}
+.bar .back{background:none;border:none;color:var(--red);font-size:15px;padding:6px 0;cursor:pointer}
+.bar .t{font-size:21px;font-weight:700}.bar .s{font-size:13px;color:var(--muted);margin-top:2px}
+.bar .s.warn{color:var(--amber);font-weight:500}
+.wrap{padding:16px;display:flex;flex-direction:column;gap:14px;flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card.ice{background:var(--ice);border-color:var(--ice-line)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.h{font-size:15px;font-weight:600}.mut{font-size:13px;color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;min-height:96px}
+.tile:active{background:var(--ice)}
+.kpi{background:var(--ice);border-radius:12px;padding:10px}.kpi b{display:block;font-size:22px}.kpi span{font-size:12px;color:var(--muted)}
+.step{display:flex;gap:12px;align-items:flex-start;margin-top:12px}
+.dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.dot.ok{background:var(--green);color:#fff}.dot.wait{border:2px solid var(--amber)}.dot.skip{background:var(--amber-bg);border:2px solid var(--amber)}.dot.none{border:2px solid var(--line)}
+.list{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.li{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E6EDF5}
+.li:last-child{border-bottom:none}
+.btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:17px;font-weight:600;background:var(--red);color:#fff;cursor:pointer}
+.btn:disabled{opacity:.55}
+.btn.navy{background:var(--navy)}.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--ice-line);font-weight:500}
+.btn.sm{padding:11px;font-size:15px}
+.btn.green{background:var(--green)}
+.copy{border:1px solid var(--red-line);background:var(--red-soft);color:var(--red);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#E6EDF5;border-radius:12px;padding:4px}
+.seg button{border:none;border-radius:9px;padding:11px;font-size:15px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button.on{background:#fff;color:var(--navy);font-weight:600}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1.5px solid var(--ice-line);background:#fff;border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer}
+.pill.on{background:var(--navy);border-color:var(--navy);color:#fff}
+label.f{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
+input.t,textarea.t{width:100%;border:1px solid var(--ice-line);border-radius:10px;padding:12px 14px;font-size:15px;background:#fff}
+input.t:focus,textarea.t:focus{outline:none;border-color:var(--navy)}
+textarea.t{resize:none;height:76px}
+input.big{font-size:20px;letter-spacing:1px;border:1.5px solid var(--navy);border-radius:12px;padding:14px 16px}
+.chk{width:22px;height:22px;accent-color:var(--red);flex-shrink:0}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:44px;height:44px;border-radius:12px;border:1px solid var(--ice-line);background:#fff;font-size:22px;cursor:pointer}
+.stepper b{font-size:22px;min-width:34px;text-align:center}
+.st{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.st.green{background:var(--green-bg);color:var(--green)}.st.amber{background:var(--amber-bg);color:var(--amber)}
+.st.red{background:var(--danger-bg);color:var(--danger)}.st.grey{background:var(--grey-bg);color:var(--muted)}
+.foot{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+.tabs{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{border:none;background:none;padding:12px 4px;font-size:13px;color:var(--muted);cursor:pointer}
+.tabs button.on{color:var(--red);font-weight:600}
+.msg{padding:12px 14px;border-radius:12px;font-size:14px}
+.msg.err{background:var(--danger-bg);color:var(--danger)}.msg.ok{background:var(--green-bg);color:var(--green)}
+.center{text-align:center;padding:40px 20px;color:var(--muted)}
+.wk{display:grid;grid-template-columns:62px 1fr 42px;gap:8px;align-items:center;font-size:13px}
+.wk .tr{height:10px;background:var(--grey-bg);border-radius:5px;overflow:hidden}.wk .tr i{display:block;height:100%;background:var(--red)}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:9;max-width:90%}
+select.t{width:100%;border:1px solid var(--ice-line);border-radius:10px;padding:11px 12px;font-size:15px;background:#fff}
+</style>
+</head>
+<body>
+<div id="app"><div class="center">กำลังโหลด...</div></div>
+
+<script>
+// ใช้ URL เดียวกับหน้าเก็บ Lead ของระบบขยาย
+const API = 'https://script.google.com/macros/s/AKfycbyU3h01Q5pseypH6tZxhli0_56UR_8B7yTxMyVMc6YUVXHuSifSLMawliakFfLcIn1E1A/exec';
+const SKEY = 'pbh_session_v1';
+const TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const TH_DAY = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const $app = document.getElementById('app');
+let S = loadSession(), HOME = null, VIEW = 'home', DASH_AREA = '';
+
+// ---------- ตัวช่วย ----------
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function dkey(k){ const a = String(k).split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
+function thDate(k){ const d = dkey(k); return d.getDate() + ' ' + TH_MON[d.getMonth()]; }
+function thDay(k){ const d = dkey(k); return TH_DAY[d.getDay()] + ' ' + thDate(k); }
+function addK(k, n){ const d = dkey(k); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function toast(t){ const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; document.body.appendChild(el); setTimeout(()=>el.remove(), 2600); }
+function loadSession(){ try{ const s = JSON.parse(localStorage.getItem(SKEY) || 'null'); return s && s.exp > Date.now() ? s : null; }catch(e){ return null; } }
+function saveSession(s){ S = s; localStorage.setItem(SKEY, JSON.stringify(s)); }
+function logout(){ localStorage.removeItem(SKEY); S = null; HOME = null; renderLogin(); }
+function isAdmin(){ return S && (S.user.role === 'admin' || S.user.role === 'viewer'); }
+const ICON = {
+  cal:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C8001E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+  pen:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C8001E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+  msg:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  ok:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
+  copy:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>'
+};
+
+// ไม่แนบข้อมูลล็อกอิน Google (กันปัญหาล็อกอินหลายบัญชี) และลองใหม่ 1 ครั้งถ้าเน็ตสะดุด
+async function api(action, data){
+  const body = JSON.stringify(Object.assign({ action, token: S && S.token }, data || {}));
+  let lastErr;
+  for(let i = 0; i < 2; i++){
+    try{
+      const res = await fetch(API, { method:'POST', credentials:'omit', body });
+      const txt = await res.text();
+      let j; try{ j = JSON.parse(txt); }catch(e){ throw new Error('ระบบของ Google ตอบกลับผิดรูปแบบ ลองใหม่อีกครั้ง'); }
+      if(j.relogin){ logout(); throw new Error(j.error); }
+      if(!j.ok){ const e = new Error(j.error || 'ระบบขัดข้อง'); e.data = j; throw e; }
+      return j;
+    }catch(e){
+      lastErr = e;
+      if(e.data || /กรุณาเข้าสู่ระบบ/.test(e.message)) throw e;
+      if(i === 0) await new Promise(r => setTimeout(r, 1200));
+    }
+  }
+  throw lastErr;
+}
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>toast('คัดลอกลิงก์แล้ว ส่งให้ทีมโลตัสได้เลย'), ()=>prompt('คัดลอกลิงก์นี้', t)); }
+  else prompt('คัดลอกลิงก์นี้', t);
+}
+
+// ---------- ล็อกอิน ----------
+function renderLogin(found, err){
+  $app.innerHTML = `
+  <div class="hdr" style="padding-bottom:64px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600"><span>true</span><span style="opacity:.7">×</span>
+      <span style="background:#fff;color:#0B7A4B;padding:2px 10px;border-radius:999px">Lotus's</span></div>
+    <div style="font-size:30px;font-weight:700;margin-top:10px">PBH Portal</div>
+    <div class="sm">แผนเดิน · ยอดปิด · ติดตามพื้นที่ ในที่เดียว</div>
+  </div>
+  <div class="wrap" style="margin-top:-44px">
+    <div class="card">
+      <label class="f" for="emp">รหัสพนักงาน (Employee ID)</label>
+      <input id="emp" class="t big" inputmode="numeric" autocomplete="off" placeholder="เช่น 90003244" value="${esc(found ? found.user.id : '')}">
+      <div class="mut" style="margin:8px 0 14px">เครื่องจะจำไว้ 30 วัน</div>
+      ${found ? '' : '<button class="btn" id="go">เข้าสู่ระบบ</button>'}
+    </div>
+    ${found ? `
+    <div class="card ice">
+      <div class="mut">ใช่คุณไหม?</div>
+      <div style="margin:10px 0 14px">
+        <div style="font-size:17px;font-weight:600">${esc(found.user.name)}</div>
+        <div class="mut">${found.user.role === 'pbh' ? 'PBH · ' + esc(found.user.area) + ' · ' + esc(found.user.region) : 'ส่วนกลาง · ' + (found.user.role === 'admin' ? 'Admin' : 'ผู้บริหาร')}</div>
+      </div>
+      ${found.needPin ? '<label class="f" for="pin">PIN</label><input id="pin" class="t" type="password" inputmode="numeric" style="margin-bottom:12px">' : ''}
+      <div style="display:flex;gap:10px"><button class="btn navy sm" id="yes">ใช่ เข้าใช้งาน</button><button class="btn ghost sm" id="no">ไม่ใช่</button></div>
+    </div>` : ''}
+    ${err ? `<div class="msg err">${esc(err)}</div>` : ''}
+  </div>`;
+  const emp = document.getElementById('emp');
+  if(!found){
+    const go = async () => {
+      const id = emp.value.trim(); if(!id) return;
+      document.getElementById('go').disabled = true;
+      try{ renderLogin(await api('p_login', { employeeId:id })); }
+      catch(e){ renderLogin(null, e.message); }
+    };
+    document.getElementById('go').onclick = go;
+    emp.onkeydown = e => { if(e.key === 'Enter') go(); };
+    emp.focus();
+  }else{
+    document.getElementById('no').onclick = () => renderLogin();
+    document.getElementById('yes').onclick = async (ev) => {
+      ev.target.disabled = true;
+      try{
+        const pin = found.needPin ? document.getElementById('pin').value.trim() : '';
+        const r = await api('p_login', { employeeId: found.user.id, confirm:true, pin });
+        saveSession({ token:r.token, user:r.user, exp: Date.now() + 29*86400000 });
+        VIEW = 'home'; loadHome();
+      }catch(e){ renderLogin(found, e.message); }
+    };
+  }
+}
+
+// ---------- หน้าแรก ----------
+async function loadHome(){
+  $app.innerHTML = '<div class="center">กำลังโหลด...</div>';
+  try{ HOME = await api('p_home'); isAdmin() ? renderAdmin() : renderHome(); }
+  catch(e){ $app.innerHTML = `<div class="wrap"><div class="msg err">${esc(e.message)}</div><button class="btn" onclick="loadHome()">ลองใหม่</button></div>`; }
+}
+
+function renderHome(){
+  const h = HOME, p = h.plan, r = h.report;
+  const planLine = p ? (p.type === 'skip'
+      ? `<div class="step"><div class="dot skip"></div><div><div class="h">ขอข้ามแล้ว</div><div class="mut">${esc(p.reason)}${p.note ? ' · ' + esc(p.note) : ''}</div></div></div>`
+      : `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">ส่งแผนเดินแล้ว</div><div class="mut">${p.branches.map(esc).join(' · ')}</div></div></div>`)
+    : `<div class="step"><div class="dot wait"></div><div><div class="h">กดแผนเดิน หรือขอข้าม</div><div class="mut" style="color:var(--amber)">ภายใน พฤหัสบดี ${thDate(addK(h.planSat,-2))} 18:00</div></div></div>`;
+  let repLine = '';
+  if(h.reportOpen && h.reportPlanned){
+    repLine = r ? `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">กรอกยอดแล้ว · ปิดทรู ${r.trueClosed}</div><div class="mut">แก้ได้ถึง อาทิตย์ ${thDate(addK(h.reportDate,1))}</div></div></div>`
+                : `<div class="step"><div class="dot wait"></div><div><div class="h">กรอกยอดหลังวันเดิน</div><div class="mut" style="color:var(--amber)">กรอกได้ถึง อาทิตย์ ${thDate(addK(h.reportDate,1))}</div></div></div>`;
+  }
+  const done = (p ? 1 : 0) + (h.reportOpen && h.reportPlanned && r ? 1 : 0), total = 1 + (h.reportOpen && h.reportPlanned ? 1 : 0);
+  $app.innerHTML = `
+  <div class="hdr">
+    <div class="sm">สวัสดี</div><div class="lg">${esc(h.user.name)}</div>
+    <div class="chip">${esc(h.user.area)} · ${esc(h.user.region)}</div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="row"><div class="h">สัปดาห์นี้ · เสาร์ ${thDate(h.planSat)}</div>
+        <span class="st ${done === total ? 'green' : 'amber'}">${done} / ${total} เสร็จ</span></div>
+      ${planLine}${repLine}
+    </div>
+    <div class="grid3">
+      <button class="tile" onclick="renderPlan()">${ICON.cal}<span>แผนเดิน /<br>ขอข้าม</span></button>
+      <button class="tile" onclick="renderReport()">${ICON.pen}<span>กรอกยอด</span></button>
+      <button class="tile" onclick="renderIssue()">${ICON.msg}<span>แจ้งปัญหา /<br>ฟีดแบค</span></button>
+    </div>
+    <div class="card">
+      <div class="row"><div class="h">พื้นที่ของฉัน · เดือนนี้</div><a href="#" onclick="renderDash();return false" style="font-size:13px;font-weight:600;text-decoration:none">แดชบอร์ด ›</a></div>
+      <div class="grid3" style="margin-top:12px">
+        <div class="kpi"><b>${h.month.leads}</b><span>Lead โลตัส</span></div>
+        <div class="kpi"><b style="color:var(--red)">${h.month.trueClosed}</b><span>ปิดเน็ตทรู</span></div>
+        <div class="kpi"><b style="color:var(--green)">${h.month.lotusClosed}</b><span>โลตัสปิดได้</span></div>
+      </div>
+    </div>
+    <div class="list">
+      <div class="h" style="padding:14px 16px 4px">สาขาของฉัน · ลิงก์ชีตให้ทีมโลตัส</div>
+      ${h.branches.length ? h.branches.map((b,i) => `
+        <div class="li" style="justify-content:space-between"><span style="font-size:15px">${esc(b.name)}</span>
+          ${b.sheetUrl ? `<button class="copy" data-i="${i}">${ICON.copy}คัดลอกลิงก์ส่งโลตัส</button>` : '<span class="mut">กำลังสร้างชีต</span>'}</div>`).join('')
+        : '<div class="li mut">ยังไม่มีสาขา · ลงทะเบียนได้ในหน้าแผนเดิน</div>'}
+    </div>
+    <button class="btn ghost sm" onclick="logout()">ออกจากระบบ</button>
+  </div>`;
+  document.querySelectorAll('.copy').forEach(b => b.onclick = () => copyText(h.branches[b.dataset.i].sheetUrl));
+}
+
+function bar(title, sub, warn){
+  return `<div class="bar"><button class="back" onclick="${isAdmin() ? 'renderAdmin()' : 'renderHome()'}">‹ กลับ</button>
+    <div class="t">${title}</div>${sub ? `<div class="s ${warn ? 'warn' : ''}">${sub}</div>` : ''}</div>`;
+}
+
+// ---------- แผนเดิน / ขอข้าม ----------
+function renderPlan(){
+  const h = HOME, p = h.plan || {};
+  let mode = p.type === 'skip' ? 'skip' : 'walk';
+  const picked = new Set(p.type === 'walk' ? p.branches : h.branches.map(b => b.name));
+  let reason = p.reason || '';
+  const draw = () => {
+    $app.innerHTML = bar('แผนเดิน · เสาร์ ' + thDate(h.planSat), 'ส่งภายใน พฤหัสบดี ' + thDate(addK(h.planSat,-2)) + ' 18:00', true) + `
+    <div class="wrap">
+      <div class="seg"><button class="${mode==='walk'?'on':''}" data-m="walk">เดินสัปดาห์นี้</button><button class="${mode==='skip'?'on':''}" data-m="skip">ขอข้าม</button></div>
+      ${mode === 'walk' ? `
+        <div class="h">เลือกสาขาที่จะเดิน (เลือกได้หลายสาขา)</div>
+        <div class="list">
+          ${h.branches.map((b,i) => `<label class="li"><input type="checkbox" class="chk" data-i="${i}" ${picked.has(b.name)?'checked':''}>
+            <span><span style="font-size:15px;font-weight:500;display:block">${esc(b.name)}</span>
+            <span class="mut" style="font-size:12px">${b.lastWalked ? 'เดินล่าสุด ' + thDate(b.lastWalked) : 'ยังไม่เคยเดิน'}</span></span></label>`).join('')}
+          <button class="li" onclick="renderBranch()" style="width:100%;background:none;border:none;color:var(--red);font-size:15px;font-weight:600;cursor:pointer;text-align:left">
+            <span style="width:22px;height:22px;border-radius:6px;border:1.5px dashed var(--red);display:flex;align-items:center;justify-content:center">+</span>ลงทะเบียนสาขาใหม่</button>
+        </div>` : `
+        <div class="h">เหตุผลที่ไม่เดินสัปดาห์นี้</div>
+        <div class="pills">${h.skipReasons.map(x => `<button class="pill ${reason===x?'on':''}" data-r="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+        <div><label class="f mut" for="note" style="font-weight:400">รายละเอียดเพิ่มเติม${reason==='อื่นๆ' ? '' : ' (ไม่บังคับ)'}</label>
+          <textarea id="note" class="t">${esc(p.type==='skip' ? p.note : '')}</textarea></div>`}
+      <div id="m"></div>
+    </div>
+    <div class="foot"><button class="btn" id="save">${mode==='walk' ? 'ส่งแผนเดิน · ' + picked.size + ' สาขา' : 'ส่งคำขอข้าม'}</button></div>`;
+    document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
+    document.querySelectorAll('.chk').forEach(c => c.onchange = () => { const n = h.branches[c.dataset.i].name; c.checked ? picked.add(n) : picked.delete(n);
+      document.getElementById('save').textContent = 'ส่งแผนเดิน · ' + picked.size + ' สาขา'; });
+    document.querySelectorAll('.pill').forEach(b => b.onclick = () => { const n = document.getElementById('note').value; reason = b.dataset.r; draw(); document.getElementById('note').value = n; });
+    document.getElementById('save').onclick = async (ev) => {
+      ev.target.disabled = true;
+      try{
+        await api('p_savePlan', mode === 'walk' ? { weekOf:h.planSat, type:'walk', branches:[...picked] }
+                                                : { weekOf:h.planSat, type:'skip', reason, note: document.getElementById('note').value });
+        toast(mode === 'walk' ? 'ส่งแผนเดินแล้ว' : 'ส่งคำขอข้ามแล้ว'); loadHome();
+      }catch(e){ ev.target.disabled = false; document.getElementById('m').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+    };
+  };
+  draw();
+}
+
+// ---------- กรอกยอด ----------
+function renderReport(){
+  const h = HOME;
+  if(!h.reportOpen){
+    $app.innerHTML = bar('กรอกยอด', '') + `<div class="wrap"><div class="card ice"><div class="h">ยังไม่ถึงเวลากรอกยอด</div>
+      <div class="mut" style="margin-top:6px">กรอกได้ตั้งแต่วันเสาร์ ${thDate(h.planSat)} ถึงวันอาทิตย์ ${thDate(addK(h.planSat,1))}</div></div></div>`; return;
+  }
+  const r = h.report || { salesOut:0, trueClosed:0, trueDeciding:0, note:'' };
+  const v = { salesOut:r.salesOut, trueClosed:r.trueClosed, trueDeciding:r.trueDeciding };
+  const F = [['salesOut','เซลที่ออกเดิน',''],['trueClosed','ปิดเน็ตทรูได้ (Sub)','var(--red)'],['trueDeciding','รอตัดสินใจเน็ตทรู','']];
+  $app.innerHTML = bar('กรอกยอด · เสาร์ ' + thDate(h.reportDate), 'กรอกได้ถึง อาทิตย์ ' + thDate(addK(h.reportDate,1)) + ' (1 วันหลังเดิน)', true) + `
+  <div class="wrap">
+    ${h.reportPlanned ? '' : '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">สัปดาห์นี้ไม่ได้กดแผนเดินไว้ ถ้าเดินจริงกรอกยอดได้ตามปกติ</div>'}
+    <div class="card ice row"><div><div class="mut">Lead โลตัสที่เข้าระบบวันนี้</div><div class="mut" style="font-size:12px">ดึงอัตโนมัติ ไม่ต้องกรอก</div></div>
+      <b style="font-size:28px">${h.leadsOnReportDate}</b></div>
+    <div class="list">${F.map(([k,l,c]) => `<div class="li" style="justify-content:space-between">
+      <span style="font-size:15px;font-weight:${c?600:500};color:${c||'inherit'}">${l}</span>
+      <div class="stepper"><button aria-label="ลด" data-k="${k}" data-d="-1">−</button><b id="v_${k}" style="color:${c||'inherit'}">${v[k]}</b><button aria-label="เพิ่ม" data-k="${k}" data-d="1">+</button></div></div>`).join('')}</div>
+    <div><label class="f" for="note">หมายเหตุ (ไม่บังคับ)</label><textarea id="note" class="t">${esc(r.note)}</textarea></div>
+    <div class="mut">ส่งแล้วกลับมาแก้ได้จนถึงวันอาทิตย์ ถ้ามีเซลปิดได้เพิ่มทีหลัง</div>
+    <div id="m"></div>
+  </div>
+  <div class="foot"><button class="btn" id="save">${h.report ? 'บันทึกการแก้ไข' : 'ส่งยอด'}</button></div>`;
+  document.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
+    const k = b.dataset.k; v[k] = Math.max(0, v[k] + Number(b.dataset.d)); document.getElementById('v_' + k).textContent = v[k]; });
+  document.getElementById('save').onclick = async (ev) => {
+    ev.target.disabled = true;
+    try{ await api('p_saveReport', Object.assign({ walkDate:h.reportDate, note:document.getElementById('note').value }, v)); toast('บันทึกยอดแล้ว'); loadHome(); }
+    catch(e){ ev.target.disabled = false; document.getElementById('m').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+  };
+}
+
+// ---------- ลงทะเบียนสาขา ----------
+function renderBranch(found, done){
+  $app.innerHTML = `<div class="bar"><button class="back" onclick="renderPlan()">‹ กลับ</button><div class="t">ลงทะเบียนสาขา</div><div class="s">พื้นที่ ${esc(HOME.user.area)}</div></div>
+  <div class="wrap">
+    ${done ? `<div class="card" style="background:var(--green-bg);border-color:#B8E0CB">
+        <div class="h" style="color:var(--green);display:flex;gap:8px;align-items:center">${ICON.ok} สร้างชีตสาขาแล้ว</div>
+        <div class="mut" style="margin:6px 0 12px;color:#1E4D38">${esc(done.name)} · ส่งลิงก์นี้ให้ทีมโลตัสที่รับ Lead ได้เลย ไม่ต้องล็อกอิน</div>
+        <div style="display:flex;gap:10px"><button class="btn green sm" id="cp">คัดลอกลิงก์</button><a class="btn ghost sm" style="text-align:center;text-decoration:none" href="${esc(done.sheetUrl)}" target="_blank" rel="noopener">เปิดชีต</a></div></div>
+      <button class="btn navy sm" onclick="renderPlan()">กลับไปหน้าแผนเดิน</button>` : `
+    <div><label class="f" for="bn">1 · ชื่อสาขาโลตัส</label><input id="bn" class="t" placeholder="เช่น โลตัส โก เฟรช อ่าวนาง" value="${esc(found ? found.name : '')}"></div>
+    <div><label class="f" for="mp">2 · ลิงก์ Google Maps ของสาขา</label><input id="mp" class="t" placeholder="วางลิงก์ที่คัดลอกมา" value="${esc(found ? found.mapsUrl : '')}">
+      <div class="mut" style="font-size:12px;margin-top:6px">เปิด Google Maps → ค้นหาสาขา → แชร์ → คัดลอกลิงก์ → วางตรงนี้</div></div>
+    ${found ? `<div class="card">
+        <div class="mut">ระบบเจอพิกัด${found.source === 'name' ? ' (จากชื่อสาขา กรุณาตรวจให้ดี)' : ''}</div>
+        <div class="h" style="margin:2px 0 8px">${found.lat}, ${found.lng}</div>
+        <a href="https://www.google.com/maps?q=${found.lat},${found.lng}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600">เปิดดูตำแหน่งใน Google Maps ›</a>
+        <div class="h" style="margin:14px 0 10px">ใช่สาขานี้ไหม?</div>
+        <div style="display:flex;gap:10px"><button class="btn navy sm" id="yes">ใช่ ลงทะเบียน</button><button class="btn ghost sm" id="no">ไม่ใช่</button></div></div>`
+      : '<button class="btn" id="find">ค้นหาพิกัด</button>'}
+    <div id="m"></div>`}
+  </div>`;
+  const m = t => document.getElementById('m').innerHTML = `<div class="msg err">${esc(t)}</div>`;
+  if(done){ document.getElementById('cp').onclick = () => copyText(done.sheetUrl); return; }
+  if(!found){
+    document.getElementById('find').onclick = async (ev) => {
+      const name = document.getElementById('bn').value.trim(), mapsUrl = document.getElementById('mp').value.trim();
+      if(!name) return m('กรอกชื่อสาขา');
+      ev.target.disabled = true; ev.target.textContent = 'กำลังค้นหา...';
+      try{ const r = await api('p_resolveBranch', { name, mapsUrl }); renderBranch(Object.assign(r, { name, mapsUrl })); }
+      catch(e){ ev.target.disabled = false; ev.target.textContent = 'ค้นหาพิกัด'; m(e.message); }
+    };
+  }else{
+    document.getElementById('no').onclick = () => renderBranch();
+    document.getElementById('yes').onclick = async (ev) => {
+      ev.target.disabled = true; ev.target.textContent = 'กำลังสร้างชีต...';
+      try{ const r = await api('p_registerBranch', { name: document.getElementById('bn').value.trim(), lat:found.lat, lng:found.lng, mapsUrl:found.mapsUrl });
+        HOME.branches.push({ name:r.name, sheetUrl:r.sheetUrl, lastWalked:'' });   // โชว์สาขาใหม่ทันที ไม่ต้องโหลดใหม่
+        renderBranch(null, r); }
+      catch(e){ ev.target.disabled = false; ev.target.textContent = 'ใช่ ลงทะเบียน'; m(e.message); }
+    };
+  }
+}
+
+// ---------- แจ้งปัญหา / ฟีดแบค ----------
+async function renderIssue(){
+  let cat = '';
+  $app.innerHTML = bar('แจ้งปัญหา / ฟีดแบค', 'ส่วนกลางเห็นทุกเรื่อง และจะตอบกลับในหน้านี้') + `
+  <div class="wrap">
+    <div class="h">เรื่องเกี่ยวกับ</div>
+    <div class="pills" id="cats">${HOME.issueCategories.map(x => `<button class="pill" data-c="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+    <div><label class="f" for="d">รายละเอียด</label><textarea id="d" class="t" style="height:110px" placeholder="เล่าสั้นๆ ว่าเจออะไร"></textarea></div>
+    <button class="btn" id="send">ส่งเรื่อง</button><div id="m"></div>
+    <div class="h" style="margin-top:6px">เรื่องที่เคยแจ้ง</div><div id="mine" class="mut">กำลังโหลด...</div>
+  </div>`;
+  document.querySelectorAll('#cats .pill').forEach(b => b.onclick = () => { cat = b.dataset.c; document.querySelectorAll('#cats .pill').forEach(x => x.classList.toggle('on', x === b)); });
+  document.getElementById('send').onclick = async (ev) => {
+    ev.target.disabled = true;
+    try{ await api('p_submitIssue', { category:cat, detail:document.getElementById('d').value }); toast('ส่งเรื่องแล้ว'); renderIssue(); }
+    catch(e){ ev.target.disabled = false; document.getElementById('m').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+  };
+  try{ const r = await api('p_issues'); document.getElementById('mine').innerHTML = issueList(r.items, false); }
+  catch(e){ document.getElementById('mine').textContent = e.message; }
+}
+function issueList(items, admin){
+  if(!items.length) return '<div class="mut">ยังไม่มีเรื่อง</div>';
+  return '<div class="list">' + items.map(x => `<div class="li" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div class="row"><span class="h" style="font-size:14px">${esc(x.category)}${admin ? ' · ' + esc(x.area) : ''}</span>
+      <span class="st ${x.status === 'ปิดแล้ว' ? 'green' : 'amber'}">${esc(x.status)}</span></div>
+    ${admin ? `<div class="mut" style="font-size:12px">${esc(x.name)}${x.at ? ' · ' + thDate(x.at.slice(0,10)) : ''}</div>` : ''}
+    <div style="font-size:14px">${esc(x.detail)}</div>
+    ${x.reply ? `<div class="msg ok" style="font-size:13px">ตอบกลับ: ${esc(x.reply)}</div>` : ''}
+    ${admin && x.status !== 'ปิดแล้ว' ? `<button class="btn ghost sm" data-close="${esc(x.id)}">ตอบและปิดเรื่อง</button>` : ''}</div>`).join('') + '</div>';
+}
+
+// ---------- แดชบอร์ด ----------
+async function renderDash(){
+  const admin = isAdmin();
+  const top = admin ? '' : bar('แดชบอร์ด', esc(HOME.user.area));
+  $app.innerHTML = top + `<div class="wrap" id="dw"><div class="center">กำลังโหลด...</div></div>` + (admin ? tabs('dash') : '');
+  try{
+    const d = await api('p_dash', { area: DASH_AREA });
+    const mx = Math.max(1, ...d.weeks.map(w => w.leads));
+    document.getElementById('dw').innerHTML = `
+      ${admin ? `<div class="bar" style="margin:-16px -16px 0;padding-top:calc(14px + env(safe-area-inset-top))"><div class="t">แดชบอร์ด</div></div>
+        <select class="t" id="ar"><option value="">ทั้งประเทศ</option>${HOME.areas.map(a => `<option ${a===DASH_AREA?'selected':''}>${esc(a)}</option>`).join('')}</select>` : ''}
+      <div class="card"><div class="h">เดือนนี้</div>
+        <div class="grid3" style="margin-top:12px">
+          <div class="kpi"><b>${d.month.leads}</b><span>Lead โลตัส</span></div>
+          <div class="kpi"><b style="color:var(--red)">${d.month.trueClosed}</b><span>ปิดเน็ตทรู</span></div>
+          <div class="kpi"><b style="color:var(--green)">${d.month.lotusClosed}</b><span>โลตัสปิดได้</span></div></div></div>
+      <div class="card"><div class="h">Lead รายสัปดาห์ · 8 สัปดาห์ล่าสุด</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        ${d.weeks.map(w => `<div class="wk"><span>${thDate(w.sat)}</span><span class="tr"><i style="width:${w.leads/mx*100}%"></i></span><b style="text-align:right">${w.leads}</b></div>
+          <div class="mut" style="font-size:12px;margin:-6px 0 0 70px">ปิดทรู ${w.trueClosed} · โลตัสปิด ${w.lotusClosed} · เซล ${w.salesOut}</div>`).join('')}
+        </div></div>
+      <div class="list"><div class="h" style="padding:14px 16px 4px">Lead แยกสาขา · 70 วันล่าสุด</div>
+        ${d.branches.length ? d.branches.map(b => `<div class="li" style="justify-content:space-between"><span style="font-size:14px">${esc(b.name)}</span><b>${b.leads}</b></div>`).join('') : '<div class="li mut">ยังไม่มีข้อมูล</div>'}</div>
+      <div class="mut" style="font-size:12px">ตัวเลขอัปเดตทุก 10 นาที</div>`;
+    if(admin) document.getElementById('ar').onchange = e => { DASH_AREA = e.target.value; renderDash(); };
+  }catch(e){ document.getElementById('dw').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+}
+
+// ---------- Admin ----------
+function tabs(on){
+  return `<div class="tabs"><button class="${on==='home'?'on':''}" onclick="renderAdmin()">ภาพรวม</button>
+    <button class="${on==='dash'?'on':''}" onclick="renderDash()">แดชบอร์ด</button>
+    <button class="${on==='iss'?'on':''}" onclick="renderAdminIssues()">ปัญหา</button></div>`;
+}
+let AF = 'todo', AR = '';
+function renderAdmin(){
+  const h = HOME;
+  const title = h.focus === 'plan' ? 'แผนเดิน เสาร์ ' + thDate(h.focusSat) : h.focus === 'today' ? 'วันเดิน เสาร์ ' + thDate(h.focusSat) : 'ผลเสาร์ ' + thDate(h.focusSat);
+  let rows = h.rows;
+  if(AF === 'todo') rows = rows.filter(r => r.level === 'red' || r.level === 'grey');
+  if(AR) rows = rows.filter(r => r.region === AR);
+  $app.innerHTML = `
+  <div class="hdr navy"><div class="sm">${h.user.role === 'admin' ? 'Admin' : 'ผู้บริหาร'} · ทั้งประเทศ</div><div class="lg">${title}</div></div>
+  <div class="wrap">
+    <div class="grid3">
+      <div class="card" style="padding:12px"><b style="font-size:24px;color:var(--green)">${h.counts.green}</b><div class="mut" style="font-size:12px">ครบ</div></div>
+      <div class="card" style="padding:12px"><b style="font-size:24px;color:var(--amber)">${h.counts.amber}</b><div class="mut" style="font-size:12px">ขอข้าม</div></div>
+      <div class="card" style="padding:12px"><b style="font-size:24px;color:var(--danger)">${h.counts.red}</b><div class="mut" style="font-size:12px">ต้องตาม</div></div>
+    </div>
+    <div class="card grid3" style="padding:12px 14px">
+      <div><b style="font-size:18px">${h.totals.weekLeads}</b><div class="mut" style="font-size:12px">Lead เสาร์ ${thDate(h.lastSat)}</div></div>
+      <div><b style="font-size:18px;color:var(--red)">${h.totals.trueClosed}</b><div class="mut" style="font-size:12px">ปิดเน็ตทรู</div></div>
+      <div><b style="font-size:18px">${h.totals.openIssues}</b><div class="mut" style="font-size:12px">ปัญหาค้าง</div></div>
+    </div>
+    <div class="pills">
+      <button class="pill ${AF==='todo'?'on':''}" data-f="todo">ต้องตามก่อน</button>
+      <button class="pill ${AF==='all'?'on':''}" data-f="all">ทั้งหมด (${h.rows.length})</button>
+      <select class="t" id="rg" style="width:auto;padding:8px 10px;font-size:14px;border-radius:999px"><option value="">ทุกภาค</option>${h.regions.map(r => `<option ${r===AR?'selected':''}>${esc(r)}</option>`).join('')}</select>
+    </div>
+    <div class="list">${rows.length ? rows.map(r => `<div class="li" style="justify-content:space-between">
+      <div><div style="font-size:14px;font-weight:600">${esc(r.area)}</div><div class="mut" style="font-size:12px">${esc(r.name)}</div></div>
+      <span class="st ${r.level}">${esc(r.label)}</span></div>`).join('') : '<div class="li mut">ไม่มีพื้นที่ที่ต้องตาม</div>'}</div>
+    <button class="btn ghost sm" onclick="logout()">ออกจากระบบ</button>
+  </div>${tabs('home')}`;
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { AF = b.dataset.f; renderAdmin(); });
+  document.getElementById('rg').onchange = e => { AR = e.target.value; renderAdmin(); };
+}
+async function renderAdminIssues(){
+  $app.innerHTML = `<div class="bar"><div class="t">ปัญหา / ฟีดแบค</div><div class="s">เรื่องที่ยังไม่ปิดอยู่ด้านบน</div></div><div class="wrap" id="iw"><div class="center">กำลังโหลด...</div></div>` + tabs('iss');
+  try{
+    const r = await api('p_issues');
+    document.getElementById('iw').innerHTML = issueList(r.items, r.canClose);
+    document.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
+      const reply = prompt('ตอบกลับ PBH (ไม่บังคับ)'); if(reply === null) return;
+      b.disabled = true;
+      try{ await api('p_closeIssue', { issueId:b.dataset.close, reply }); toast('ปิดเรื่องแล้ว'); renderAdminIssues(); }
+      catch(e){ b.disabled = false; toast(e.message); }
+    });
+  }catch(e){ document.getElementById('iw').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+}
+
+// ---------- เริ่ม ----------
+S ? loadHome() : renderLogin();
+</script>
+</body>
+</html>
