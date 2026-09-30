@@ -368,7 +368,9 @@ document.getElementById('seg-time').addEventListener('click', e=>{
 
 // ---------- Backend URL ----------
 function gasUrl(){
-  return CONFIG.GAS_URL.includes('https://script.google.com/macros/s/AKfycbyU3h01Q5pseypH6tZxhli0_56UR_8B7yTxMyVMc6YUVXHuSifSLMawliakFfLcIn1E1A/exec') ? '' : CONFIG.GAS_URL;
+  // ใช้ได้เมื่อเป็นลิงก์ Apps Script จริงเท่านั้น (ขึ้นต้น script.google.com ลงท้าย /exec)
+  const u = String(CONFIG.GAS_URL || '').trim();
+  return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u) ? u : '';
 }
 
 // เรียก backend แบบทนเน็ตกระตุก: รอไม่เกิน 20 วิ ถ้าพลาดจะลองซ้ำให้เองอีก 2 ครั้ง
