@@ -298,7 +298,7 @@ let DATA = null;
 
 // ================= โหลดข้อมูล =================
 async function load(fresh){
-  if(GAS_URL.includes('https://script.google.com/macros/s/AKfycbyU3h01Q5pseypH6tZxhli0_56UR_8B7yTxMyVMc6YUVXHuSifSLMawliakFfLcIn1E1A/exec')){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(String(GAS_URL).trim())){
     document.getElementById('error-msg').textContent = 'ยังไม่ได้ตั้งค่า GAS_URL ในไฟล์ dashboard.html';
     show('error'); return;
   }
