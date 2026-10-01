@@ -158,7 +158,7 @@ tr:last-child td{border-bottom:none;}
       <div class="kpis">
         <div class="kpi"><div class="lbl">Lead ทั้งหมด</div><div class="val" id="o-total">0</div></div>
         <div class="kpi green">
-          <div class="lbl">ปิดเน็ตทรูได้ทั้งหมด <span style="font-size:10.5px;">· รวมทุกช่องทาง</span></div>
+          <div class="lbl">ปิดเน็ตทรูได้ทั้งหมด <span style="font-size:10.5px;">· ที่ PBH กรอก</span></div>
           <div class="val" id="o-true">0 <span class="unit">ราย</span></div>
         </div>
         <div class="kpi green"><div class="lbl">ปิดขายโลตัสได้</div><div class="val" id="o-closed">0 <span class="unit">ราย</span></div></div>
@@ -193,27 +193,16 @@ tr:last-child td{border-bottom:none;}
         <div class="kpi blue"><div class="lbl">รอตัดสินใจเน็ตทรู</div><div class="val" id="t-wait">0 <span class="unit">ราย</span></div></div>
       </div>
 
-      <div class="kpis">
-        <div class="kpi" id="t-outside-card" style="display:none;">
-          <div class="lbl">ยอดรวมนอกพื้นที่ <span style="font-size:10.5px;">· กรอกจากชีต</span></div>
-          <div class="val" id="t-outside">0 <span class="unit">ราย</span></div>
-        </div>
-        <div class="kpi green">
-          <div class="lbl">ปิดได้จากลูกค้ารอตัดสินใจ <span style="font-size:10.5px;">· กรอกจากชีต</span></div>
-          <div class="val" id="t-decided">0 <span class="unit">ราย</span></div>
-        </div>
-      </div>
-
       <div class="card">
         <h2>ปิดเน็ตทรูได้ · รายสัปดาห์</h2>
-        <div class="sub">ตัวเลขบนแท่งคือจำนวนที่ปิดได้ · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสัปดาห์นั้น</div>
+        <div class="sub">ตัวเลขบนแท่งคือยอดที่ PBH กรอก · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสัปดาห์นั้น</div>
         <div class="wkchart" id="t-wkchart"></div>
         <div class="wklabels" id="t-wklabels"></div>
       </div>
 
       <div class="card">
-        <h2>ปิดเน็ตทรูได้ · แยกตามสาขาโลตัส</h2>
-        <div class="sub">เซลทรูที่ประจำหน้าสาขานี้ ปิดเน็ตทรูได้กี่ราย · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของสาขา</div>
+        <h2>ปิดเน็ตทรูได้ · แยกตามพื้นที่</h2>
+        <div class="sub">ยอดที่ PBH แต่ละพื้นที่กรอกหลังวันเดิน · ตัวเลขใต้ชื่อคือ Lead ทั้งหมดของพื้นที่</div>
         <div id="t-provs"></div>
       </div>
 
@@ -278,6 +267,8 @@ const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 
 // ดัชนีของ rows ที่ backend ส่งมา
 const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6;
+// ยอดที่ PBH กรอก: [สัปดาห์, พื้นที่, ปิดได้, รอตัดสินใจ, เซลที่ออกเดิน]
+const R_WEEK=0, R_AREA=1, R_CLOSED=2, R_WAIT=3, R_SALES=4;
 
 // สถานะที่ถือว่า "ยังไม่ได้ติดต่อ" — รับได้ทั้งคำเก่าและคำใหม่
 // เผื่อวันหน้าเปลี่ยน dropdown ในชีตเป็น "รอติดต่อ" แดชบอร์ดจะยังนับถูกทันที ไม่ต้องแก้โค้ด
@@ -355,7 +346,7 @@ function show(which){
 
 // ================= ตัวกรอง =================
 function buildFilters(){
-  const weeks = [...new Set(DATA.rows.map(r=>r[C_WEEK]))].sort((a,b)=>a-b);
+  const weeks = [...new Set(DATA.rows.map(r=>r[C_WEEK]).concat((DATA.reports||[]).map(x=>x[R_WEEK])))].sort((a,b)=>a-b);
   const maxWeek = weeks.length ? weeks[weeks.length-1] : 1;
 
   const wk = document.getElementById('f-week');
@@ -364,13 +355,23 @@ function buildFilters(){
   // รายชื่อจังหวัด ดึงจากสาขาที่มี Lead จริง ไม่ได้พิมพ์ฝังไว้
   // สาขาที่ยังไม่ได้ระบุจังหวัดในชีต จะถูกรวมเป็น "ไม่ระบุจังหวัด"
   const pv = document.getElementById('f-prov');
-  const usedProvs = [...new Set(DATA.rows.map(r=>provOf(r[C_BRANCH])))].sort((a,b)=>
+  const usedProvs = [...new Set(DATA.rows.map(r=>provOf(r[C_BRANCH])).concat((DATA.reports||[]).map(x=>x[R_AREA])))].sort((a,b)=>
     a==='ไม่ระบุจังหวัด' ? 1 : b==='ไม่ระบุจังหวัด' ? -1 : a.localeCompare(b,'th'));
   pv.innerHTML = '<option value="">ทุกจังหวัด</option>' +
     usedProvs.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
 
   wk.onchange = pv.onchange = render;
   DATA.maxWeek = maxWeek;
+}
+
+// ยอดที่ PBH กรอก กรองด้วยช่วงสัปดาห์และพื้นที่เดียวกับ Lead
+function filteredReports(){
+  const nWeeks = Number(document.getElementById('f-week').value);
+  const prov = document.getElementById('f-prov').value;
+  let rs = DATA.reports || [];
+  if(nWeeks > 0) rs = rs.filter(x => x[R_WEEK] > DATA.maxWeek - nWeeks);
+  if(prov !== '') rs = rs.filter(x => x[R_AREA] === prov);
+  return rs;
 }
 
 function filtered(){
@@ -457,36 +458,18 @@ function renderOverview(rows, weeks, wkColor){
 
 // ---------- หน้า 2 ----------
 function renderTrue(rows, weeks, wkColor){
-  // ยอดนอกพื้นที่เป็นตัวเลขที่กรอกมือ ไม่ได้แยกรายจังหวัดและไม่ผูกกับช่วงสัปดาห์
-  // จึงแสดงเฉพาะตอนดูภาพรวมทุกจังหวัด ไม่งั้นจะอ่านผิดว่าเป็นยอดของจังหวัดที่เลือก
-  const outside = Number((DATA.manual || {})['ยอดนอกพื้นที่']) || 0;
-  const selProv = document.getElementById('f-prov').value;
-  const showOutside = selProv === '';
-  document.getElementById('t-outside-card').style.display = showOutside ? 'block' : 'none';
-  if(showOutside) setNum('t-outside', outside, 'ราย');
-
-  // ปิดได้จากลูกค้ารอตัดสินใจ กรอกมือแยกรายจังหวัด
-  // เลือกจังหวัดเดียว -> โชว์ของจังหวัดนั้น, เลือกทุกจังหวัด -> รวมทุกจังหวัด
-  const mp = DATA.manualProv || {};
-  const decided = selProv === ''
-    ? Object.values(mp).reduce((a,b)=>a+(Number(b)||0),0)
-    : (Number(mp[selProv]) || 0);
-  setNum('t-decided', decided, 'ราย');
-
+  const rs = filteredReports();
   const people = new Set(rows.filter(r=>r[C_SALE]>=0).map(r=>r[C_SALE]));
   setNum('t-people', people.size, 'คน');
   set('t-avg', people.size ? (rows.length/people.size).toFixed(1) : '0');
-  setNum('t-closed', count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้'), 'ราย');
-  setNum('t-wait', count(rows, r=>r[C_TRUE]==='รอตัดสินใจเน็ตทรู'), 'ราย');
+  setNum('t-closed', rs.reduce((a,x)=>a+x[R_CLOSED],0), 'ราย');
+  setNum('t-wait', rs.reduce((a,x)=>a+x[R_WAIT],0), 'ราย');
 
   // ---- กราฟแท่ง: ปิดเน็ตทรูได้ รายสัปดาห์ ----
-  // ใช้สีชุดเดียวกับกราฟสัปดาห์ในหน้าแรก จะได้เทียบข้ามหน้าได้
   const wkClosed = {}, wkLeads = {};
   weeks.forEach(w=>{ wkClosed[w]=0; wkLeads[w]=0; });
-  rows.forEach(r=>{
-    wkLeads[r[C_WEEK]]++;
-    if(r[C_TRUE]==='ปิดเน็ตทรูได้') wkClosed[r[C_WEEK]]++;
-  });
+  rows.forEach(r=>{ wkLeads[r[C_WEEK]]++; });
+  rs.forEach(x=>{ if(wkClosed[x[R_WEEK]] !== undefined) wkClosed[x[R_WEEK]] += x[R_CLOSED]; });
   const wcmax = Math.max(1, ...Object.values(wkClosed));
   const anyWeekClosed = Object.values(wkClosed).some(v=>v>0);
 
@@ -499,34 +482,28 @@ function renderTrue(rows, weeks, wkColor){
   document.getElementById('t-wklabels').innerHTML = weeks.map(w=>
     `<div>${weekName(w)}<br><span style="opacity:.65">จาก ${wkLeads[w]}</span></div>`).join('');
 
-  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามสาขาโลตัส ----
-  // ใช้ BranchName ที่อยู่ในชีตเดียวกับ TrueStatus จึงไม่ต้องจับคู่ข้ามชีต
-  const byBr = {};
-  rows.forEach(r=>{
-    const b = r[C_BRANCH];
-    if(!byBr[b]) byBr[b] = {leads:0, closed:0};
-    byBr[b].leads++;
-    if(r[C_TRUE]==='ปิดเน็ตทรูได้') byBr[b].closed++;
-  });
-
-  // เรียงจากปิดได้มากไปน้อย แสดงสูงสุด 8 สาขาให้พอดีจอมือถือ
-  const brs = Object.entries(byBr)
+  // ---- กราฟแท่ง: ปิดเน็ตทรูได้ แยกตามพื้นที่ ----
+  const byA = {};
+  rows.forEach(r=>{ const a = provOf(r[C_BRANCH]); (byA[a] = byA[a] || {leads:0, closed:0}).leads++; });
+  rs.forEach(x=>{ (byA[x[R_AREA]] = byA[x[R_AREA]] || {leads:0, closed:0}).closed += x[R_CLOSED]; });
+  const ars = Object.entries(byA)
     .sort((a,b) => b[1].closed - a[1].closed || b[1].leads - a[1].leads)
     .slice(0, 8);
-  const bcmax = Math.max(1, ...brs.map(b=>b[1].closed));
-  const anyClosed = brs.some(b=>b[1].closed > 0);
+  const acmax = Math.max(1, ...ars.map(a=>a[1].closed));
+  const anyClosed = ars.some(a=>a[1].closed > 0);
+  const shortArea = a => String(a).split(',')[0].replace(/^BKK\s*:\s*/,'BKK ').slice(0,16);
 
-  document.getElementById('t-provs').innerHTML = brs.length ? `
+  document.getElementById('t-provs').innerHTML = ars.length ? `
     <div class="wkchart" style="height:104px;">
-      ${brs.map(([bi,v])=>`
+      ${ars.map(([a,v])=>`
         <div class="wkcol">
           <div class="n" style="${v.closed?'color:var(--lotus-green); font-weight:600;':''}">${v.closed}</div>
-          <div class="bar" style="height:${anyClosed ? (v.closed/bcmax)*80 : 0}%; background:#1D9E75;"></div>
+          <div class="bar" style="height:${anyClosed ? (v.closed/acmax)*80 : 0}%; background:#1D9E75;"></div>
         </div>`).join('')}
     </div>
     <div class="wklabels">
-      ${brs.map(([bi,v])=>`<div>${esc(shortBranch(DATA.branches[bi]))}<br><span style="opacity:.65">จาก ${v.leads}</span></div>`).join('')}
-    </div>` + (anyClosed ? '' : '<div class="empty">ยังไม่มีการปิดเน็ตทรูในช่วงที่เลือก</div>')
+      ${ars.map(([a,v])=>`<div title="${esc(a)}">${esc(shortArea(a))}<br><span style="opacity:.65">จาก ${v.leads}</span></div>`).join('')}
+    </div>` + (anyClosed ? '' : '<div class="empty">ยังไม่มียอดที่ PBH กรอกในช่วงที่เลือก</div>')
     : '<div class="empty">ไม่มีข้อมูล</div>';
 
   // ---- ตารางอันดับเซล (แสดง 10 อันดับแรก) ----
@@ -535,7 +512,6 @@ function renderTrue(rows, weeks, wkColor){
     if(r[C_SALE]<0) return;
     if(!by[r[C_SALE]]) by[r[C_SALE]] = {leads:0, trueClosed:0};
     by[r[C_SALE]].leads++;
-    if(r[C_TRUE]==='ปิดเน็ตทรูได้') by[r[C_SALE]].trueClosed++;
   });
   const list = Object.entries(by).sort((a,b)=>b[1].leads-a[1].leads);
   const top10 = list.slice(0,10);
@@ -621,17 +597,9 @@ function renderLotus(rows){
 }
 
 // ================= ตัวช่วย =================
-// ยอดปิดเน็ตทรูรวมทุกช่องทาง
-// ยอดนอกพื้นที่เป็นตัวเลขระดับประเทศ จึงนับเฉพาะตอนดูภาพรวมทุกจังหวัด
+// ยอดปิดเน็ตทรูรวม จากที่ PBH กรอกใน Portal (ตามช่วงสัปดาห์และพื้นที่ที่เลือก)
 function trueClosedTotal(rows){
-  const fromSystem = count(rows, r=>r[C_TRUE]==='ปิดเน็ตทรูได้');
-  const selProv = document.getElementById('f-prov').value;
-  const mp = DATA.manualProv || {};
-  const decided = selProv === ''
-    ? Object.values(mp).reduce((a,b)=>a+(Number(b)||0),0)
-    : (Number(mp[selProv]) || 0);
-  const outside = selProv === '' ? (Number((DATA.manual || {})['ยอดนอกพื้นที่']) || 0) : 0;
-  return fromSystem + decided + outside;
+  return filteredReports().reduce((a,x)=>a+x[R_CLOSED],0);
 }
 
 function isSla(r){ return isPending(r[C_STATUS]) && r[C_AGE] > SLA_DAYS; }
