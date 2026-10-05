@@ -162,11 +162,11 @@ tr:last-child td{border-bottom:none;}
           <div class="val" id="o-true">0 <span class="unit">ราย</span></div>
         </div>
         <div class="kpi green"><div class="lbl">ปิดขายโลตัสได้</div><div class="val" id="o-closed">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">มูลค่าตะกร้ารวม</div><div class="val" id="o-basket">฿0</div></div>
+        <div class="kpi"><div class="lbl">โลตัสยังไม่อัปเดต</div><div class="val" id="o-basket">0 <span class="unit">ราย</span></div></div>
       </div>
 
       <div class="kpi warn" style="margin-bottom:12px;">
-        <div class="lbl">⏱ ค้างรอดำเนินการเกิน 3 วัน</div>
+        <div class="lbl">⏱ โลตัสยังไม่อัปเดตเกิน 3 วัน</div>
         <div class="val" id="o-sla">0 <span class="unit" style="color:inherit;">ราย</span></div>
       </div>
 
@@ -222,29 +222,27 @@ tr:last-child td{border-bottom:none;}
     <!-- ============ ทีม Lotus's ============ -->
     <section id="p-lotus">
       <div class="kpis">
-        <div class="kpi"><div class="lbl">ดำเนินการแล้ว</div><div class="val" id="l-contacted">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi green"><div class="lbl">ปิดการขายสำเร็จ</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi blue"><div class="lbl">อยู่ระหว่างดำเนินงาน</div><div class="val" id="l-progress">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">เป็นลูกค้าอยู่แล้ว</div><div class="val" id="l-member">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">ปิดไม่สำเร็จ</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">หลีดซ้ำ</div><div class="val" id="l-dup">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi"><div class="lbl">รอดำเนินการ</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
-        <div class="kpi warn"><div class="lbl">รอดำเนินการเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">Lead ที่ส่งให้โลตัส</div><div class="val" id="l-total">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi green"><div class="lbl">อัตราปิดได้ <span style="font-size:10.5px;">· จากที่อัปเดตแล้ว</span></div><div class="val" id="l-rate">0%</div></div>
+        <div class="kpi green"><div class="lbl">ปิดได้</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">ปิดไม่ได้</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi blue"><div class="lbl">ยังไม่อัปเดต</div><div class="val" id="l-pending">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi warn"><div class="lbl">ยังไม่อัปเดตเกิน 3 วัน</div><div class="val" id="l-sla">0 <span class="unit" style="color:inherit;">ราย</span></div></div>
       </div>
 
       <div class="card">
-        <h2>สัดส่วนสถานะทั้งหมด</h2>
+        <h2>สัดส่วนผลจากทีมโลตัส</h2>
         <div class="stack" id="l-stack"></div>
         <div class="legend" id="l-legend"></div>
       </div>
 
       <div class="card">
         <h2>สรุปรายสาขา</h2>
-        <div class="sub">สาขาใหม่จะขึ้นมาเองอัตโนมัติ</div>
+        <div class="sub">สาขาใหม่จะขึ้นมาเองอัตโนมัติ · ใต้ชื่อคือสัดส่วนที่ทีมโลตัสอัปเดตแล้ว</div>
         <table>
           <thead><tr>
             <th>สาขา</th><th style="width:34px;">Lead</th>
-            <th style="width:40px;">ลูกค้า<br>เดิม</th><th style="width:34px;">รอ<br>ดำเนินการ</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
+            <th style="width:40px;">ปิดได้</th><th style="width:40px;">ปิด<br>ไม่ได้</th><th style="width:44px;">ค้างเกิน<br>3 วัน</th>
           </tr></thead>
           <tbody id="l-table"></tbody>
         </table>
@@ -275,15 +273,14 @@ const R_WEEK=0, R_AREA=1, R_CLOSED=2, R_WAIT=3, R_SALES=4;
 // ---------- การจัดกลุ่มสถานะ ----------
 // แต่ละกลุ่มรับได้ทั้งคำใหม่และคำเก่า เพราะข้อมูลเดิมในชีตไม่ได้แก้ย้อนหลัง
 // ตัวแรกของแต่ละชุดคือคำปัจจุบันที่ใช้ใน dropdown ที่เหลือคือคำเก่าที่ยังค้างอยู่
-const PENDING_STATUSES  = ['รอดำเนินการ', 'รอโทร', 'รอติดต่อ'];
-const CLOSED_STATUSES   = ['ปิดการขายสำเร็จ'];
-const LOST_STATUSES     = ['ปิดไม่สำเร็จ', 'ปิดการขายไม่สำเร็จ', 'ไม่รับสาย'];
-const MEMBER_STATUSES   = ['เป็นลูกค้าอยู่แล้ว', 'เป็นสมาชิกอยู่แล้ว'];
-const PROGRESS_STATUSES = ['อยู่ระหว่างการดำเนินงาน'];
-const DUP_STATUSES      = ['หลีดซ้ำ'];
+// ทีมโลตัสเลือกแค่ ปิดได้ / ปิดไม่ได้ · ช่องว่าง = ยังไม่อัปเดต (คำเก่าในวงเล็บรองรับข้อมูลทดสอบ)
+const CLOSED_STATUSES   = ['ปิดได้', 'ปิดการขายสำเร็จ'];
+const LOST_STATUSES     = ['ปิดไม่ได้', 'ปิดไม่สำเร็จ', 'ปิดการขายไม่สำเร็จ', 'ไม่รับสาย', 'เป็นลูกค้าอยู่แล้ว'];
+const isClosed  = st => inList(st, CLOSED_STATUSES);
+const isLost    = st => inList(st, LOST_STATUSES);
 
 const inList = (st, arr) => arr.indexOf(String(st||'').trim()) !== -1;
-const isPending = st => inList(st, PENDING_STATUSES);
+const isPending = st => !isClosed(st) && !isLost(st);   // ยังไม่อัปเดต
 
 let DATA = null;
 
@@ -414,8 +411,8 @@ function renderOverview(rows, weeks, wkColor){
   // ยอดปิดเน็ตทรูรวม = จากระบบ + ยอดนอกพื้นที่ + ปิดได้จากลูกค้ารอตัดสินใจ
   // สองก้อนหลังเป็นตัวเลขกรอกมือจากชีต แยกรายละเอียดดูได้ในหน้าทีมทรู
   setNum('o-true', trueClosedTotal(rows), 'ราย');
-  setNum('o-closed', count(rows, r=>r[C_STATUS]==='ปิดการขายสำเร็จ'), 'ราย');
-  set('o-basket', '฿' + sum(rows, r=>r[C_BASKET]).toLocaleString(undefined,{maximumFractionDigits:0}));
+  setNum('o-closed', count(rows, r=>isClosed(r[C_STATUS])), 'ราย');
+  setNum('o-basket', count(rows, r=>isPending(r[C_STATUS])), 'ราย');
   setNum('o-sla', count(rows, isSla), 'ราย');
 
   // กราฟรายสัปดาห์
@@ -534,63 +531,48 @@ function renderTrue(rows, weeks, wkColor){
 
 // ---------- หน้า 3 ----------
 function renderLotus(rows){
-  const contacted = count(rows, r=>!isPending(r[C_STATUS]));
-  const closed   = count(rows, r=>inList(r[C_STATUS], CLOSED_STATUSES));
-  const progress = count(rows, r=>inList(r[C_STATUS], PROGRESS_STATUSES));
-  const member   = count(rows, r=>inList(r[C_STATUS], MEMBER_STATUSES));
-  const lost     = count(rows, r=>inList(r[C_STATUS], LOST_STATUSES));
-  const dup      = count(rows, r=>inList(r[C_STATUS], DUP_STATUSES));
-  const pending  = count(rows, r=>isPending(r[C_STATUS]));
-  const sla      = count(rows, isSla);
-  // สถานะที่ไม่เข้ากลุ่มไหนเลย กันไม่ให้ตัวเลขในแถบรวมกันไม่ครบ 100%
-  const others   = contacted - closed - progress - member - lost - dup;
-
-  setNum('l-contacted', contacted, 'ราย');
+  const closed  = count(rows, r=>isClosed(r[C_STATUS]));
+  const lost    = count(rows, r=>isLost(r[C_STATUS]));
+  const pending = count(rows, r=>isPending(r[C_STATUS]));
+  const sla     = count(rows, isSla);
+  setNum('l-total', rows.length, 'ราย');
+  set('l-rate', (closed + lost) ? Math.round(closed / (closed + lost) * 100) + '%' : '-');
   setNum('l-closed', closed, 'ราย');
-  setNum('l-progress', progress, 'ราย');
-  setNum('l-member', member, 'ราย');
   setNum('l-lost', lost, 'ราย');
-  setNum('l-dup', dup, 'ราย');
   setNum('l-pending', pending, 'ราย');
   setNum('l-sla', sla, 'ราย');
 
   const tot = Math.max(1, rows.length);
   const seg = [
-    { n:'ปิดการขายสำเร็จ',        v:closed,   c:'#1D9E75' },
-    { n:'อยู่ระหว่างดำเนินงาน',    v:progress, c:'#378ADD' },
-    { n:'เป็นลูกค้าอยู่แล้ว',      v:member,   c:'#8B5CF6' },
-    { n:'ปิดไม่สำเร็จ',           v:lost,     c:'#C25A4A' },
-    { n:'หลีดซ้ำ',               v:dup,      c:'#8A8880' },
-    { n:'อื่นๆ',                 v:others,   c:'#D6D3CC' },
-    { n:'รอดำเนินการ',            v:pending,  c:'#E0A020' }
+    { n:'ปิดได้',        v:closed,  c:'#1D9E75' },
+    { n:'ปิดไม่ได้',     v:lost,    c:'#C25A4A' },
+    { n:'ยังไม่อัปเดต',  v:pending, c:'#E0A020' }
   ];
   document.getElementById('l-stack').innerHTML =
-    seg.map(x=>`<div style="width:${Math.max(0,x.v)/tot*100}%; background:${x.c};"></div>`).join('');
+    seg.map(x=>`<div style="width:${x.v/tot*100}%; background:${x.c};"></div>`).join('');
   document.getElementById('l-legend').innerHTML =
-    seg.filter(x=>x.v>0).map(x=>
-      `<div><span style="background:${x.c}"></span>${x.n} ${x.v}</div>`).join('');
+    seg.filter(x=>x.v>0).map(x=>`<div><span style="background:${x.c}"></span>${x.n} ${x.v}</div>`).join('');
 
   const by = {};
   rows.forEach(r=>{
     const b = r[C_BRANCH];
-    if(!by[b]) by[b] = {total:0, contacted:0, member:0, pending:0, sla:0};
+    if(!by[b]) by[b] = {total:0, closed:0, lost:0, sla:0};
     by[b].total++;
-    if(!isPending(r[C_STATUS])) by[b].contacted++; else by[b].pending++;
-    if(inList(r[C_STATUS], MEMBER_STATUSES)) by[b].member++;
+    if(isClosed(r[C_STATUS])) by[b].closed++;
+    else if(isLost(r[C_STATUS])) by[b].lost++;
     if(isSla(r)) by[b].sla++;
   });
-
   document.getElementById('l-table').innerHTML =
     Object.entries(by).sort((a,b)=>b[1].total-a[1].total).map(([bi,v])=>{
-      const pct = Math.round(v.contacted/v.total*100);
+      const pct = Math.round((v.closed + v.lost) / v.total * 100);
       return `<tr>
         <td>
           <div class="nm2">${esc(shortBranch(DATA.branches[bi]))}</div>
-          <div class="sub2" style="color:${pct>=20?'var(--lotus-green)':'var(--muted)'}">ดำเนินการแล้ว ${pct}%</div>
+          <div class="sub2" style="color:${pct>=50?'var(--lotus-green)':'var(--muted)'}">อัปเดตแล้ว ${pct}%</div>
         </td>
         <td>${v.total}</td>
-        <td class="${v.member?'':'zero'}" style="${v.member?'color:#8B5CF6;':''}">${v.member}</td>
-        <td>${v.pending}</td>
+        <td class="${v.closed?'':'zero'}" style="${v.closed?'color:var(--lotus-green);font-weight:600;':''}">${v.closed}</td>
+        <td class="${v.lost?'':'zero'}">${v.lost}</td>
         <td class="${v.sla?'hot':'zero'}">${v.sla}</td>
       </tr>`;
     }).join('') || '<tr><td colspan="5" class="empty">ไม่มีข้อมูล</td></tr>';
