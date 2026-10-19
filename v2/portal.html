@@ -351,6 +351,16 @@ function renderReport(pickDate){
 }
 
 // ---------- ลงทะเบียนสาขา ----------
+const SRC_LABEL = { pin:'พิกัดจากหมุดในลิงก์', place:'พิกัดจากชื่อสถานที่ในลิงก์', view:'พิกัดโดยประมาณจากลิงก์', name:'พิกัดจากการค้นชื่อสาขา', manual:'พิกัดที่กรอกเอง' };
+// รับ "13.75, 100.50" / "13.75 100.50" / สลับลำดับมาก็แก้ให้
+function parseLatLng(s){
+  const m = String(s || '').replace(/[()]/g, '').match(/^\s*(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+  if(!m) return null;
+  let a = +m[1], b = +m[2];
+  if(a >= 96 && a <= 106 && b >= 5 && b <= 21) [a, b] = [b, a];
+  if(!(a >= 5 && a <= 21 && b >= 96 && b <= 106)) return null;
+  return { lat: Math.round(a * 1e6) / 1e6, lng: Math.round(b * 1e6) / 1e6 };
+}
 function renderBranch(found, done){
   $app.innerHTML = `<div class="bar"><button class="back" onclick="renderPlan()">‹ กลับ</button><div class="t">ลงทะเบียนสาขา</div><div class="s">พื้นที่ ${esc(HOME.user.area)}</div></div>
   <div class="wrap">
@@ -362,30 +372,50 @@ function renderBranch(found, done){
     <div><label class="f" for="bn">1 · ชื่อสาขาโลตัส</label><input id="bn" class="t" placeholder="เช่น โลตัส โก เฟรช อ่าวนาง" value="${esc(found ? found.name : '')}"></div>
     <div><label class="f" for="mp">2 · ลิงก์ Google Maps ของสาขา</label><input id="mp" class="t" placeholder="วางลิงก์ที่คัดลอกมา" value="${esc(found ? found.mapsUrl : '')}">
       <div class="mut" style="font-size:12px;margin-top:6px">เปิด Google Maps → ค้นหาสาขา → แชร์ → คัดลอกลิงก์ → วางตรงนี้</div></div>
-    ${found ? `<div class="card">
-        <div class="mut">ระบบเจอพิกัด${found.source === 'name' ? ' (จากชื่อสาขา กรุณาตรวจให้ดี)' : ''}</div>
-        <div class="h" style="margin:2px 0 8px">${found.lat}, ${found.lng}</div>
-        <a href="https://www.google.com/maps?q=${found.lat},${found.lng}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600">เปิดดูตำแหน่งใน Google Maps ›</a>
-        <div class="h" style="margin:14px 0 10px">ใช่สาขานี้ไหม?</div>
-        <div style="display:flex;gap:10px"><button class="btn navy sm" id="yes">ใช่ ลงทะเบียน</button><button class="btn ghost sm" id="no">ไม่ใช่</button></div></div>`
+    ${found && found.lat ? `<div class="card">
+        <div class="mut">${SRC_LABEL[found.source] || 'พิกัดที่ได้'}</div>
+        <div class="h" style="margin:2px 0 10px">${found.lat}, ${found.lng}</div>
+        ${found.source !== 'pin' && found.source !== 'manual' ? `<div class="msg" style="background:var(--amber-bg);color:var(--amber);margin-bottom:10px;font-size:13px">ตำแหน่งนี้อาจคลาดเคลื่อน ดูแผนที่ด้านล่างให้แน่ใจว่าหมุดอยู่ที่สาขา</div>` : ''}
+        <iframe title="ตำแหน่งสาขา" src="https://maps.google.com/maps?q=${found.lat},${found.lng}&z=17&output=embed" style="width:100%;height:220px;border:0;border-radius:10px;background:var(--ice)" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <a href="https://www.google.com/maps?q=${found.lat},${found.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:14px;font-weight:600">เปิดใน Google Maps ›</a>
+        <div class="h" style="margin:14px 0 10px">หมุดตรงสาขาไหม?</div>
+        <div style="display:flex;gap:10px"><button class="btn navy sm" id="yes">ตรง ลงทะเบียน</button><button class="btn ghost sm" id="no">ไม่ตรง แก้พิกัดเอง</button></div></div>`
       : '<button class="btn" id="find">ค้นหาพิกัด</button>'}
+    <div id="man" style="display:${found && found.manual ? 'block' : 'none'}">
+      <label class="f" for="ll">3 · กรอกพิกัดเอง (ละติจูด, ลองจิจูด)</label>
+      <input id="ll" class="t" inputmode="decimal" placeholder="เช่น 13.756331, 100.501765" value="${found && found.source === 'manual' ? found.lat + ', ' + found.lng : ''}">
+      <div class="mut" style="font-size:12px;margin:6px 0 10px">วิธีเอาพิกัด: เปิด Google Maps → กดค้างตรงอาคารสาขาจนขึ้นหมุดแดง → แตะตัวเลขพิกัดด้านบนเพื่อคัดลอก → วางตรงนี้</div>
+      <button class="btn navy sm" id="useLL">ใช้พิกัดนี้</button>
+    </div>
     <div id="m"></div>`}
   </div>`;
   const m = t => document.getElementById('m').innerHTML = `<div class="msg err">${esc(t)}</div>`;
   if(done){ document.getElementById('cp').onclick = () => copyText(done.sheetUrl); return; }
-  if(!found){
+  const val = id => document.getElementById(id).value.trim();
+  document.getElementById('useLL').onclick = () => {
+    const c = parseLatLng(val('ll'));
+    if(!c) return m('รูปแบบพิกัดไม่ถูกต้อง ต้องเป็นตัวเลข 2 ชุดคั่นด้วยจุลภาค เช่น 13.756331, 100.501765');
+    if(!val('bn')) return m('กรอกชื่อสาขา');
+    renderBranch({ name: val('bn'), mapsUrl: val('mp'), lat: c.lat, lng: c.lng, source: 'manual', manual: true });
+  };
+  if(!(found && found.lat)){
     document.getElementById('find').onclick = async (ev) => {
-      const name = document.getElementById('bn').value.trim(), mapsUrl = document.getElementById('mp').value.trim();
+      const name = val('bn'), mapsUrl = val('mp');
       if(!name) return m('กรอกชื่อสาขา');
+      const typed = parseLatLng(mapsUrl);   // วางพิกัดในช่องลิงก์ก็ได้
+      if(typed) return renderBranch({ name, mapsUrl:'', lat:typed.lat, lng:typed.lng, source:'manual', manual:true });
       ev.target.disabled = true; ev.target.textContent = 'กำลังค้นหา...';
       try{ const r = await api('p_resolveBranch', { name, mapsUrl }); renderBranch(Object.assign(r, { name, mapsUrl })); }
-      catch(e){ ev.target.disabled = false; ev.target.textContent = 'ค้นหาพิกัด'; m(e.message); }
+      catch(e){ renderBranch({ name, mapsUrl, manual:true }); m(e.message); }
     };
   }else{
-    document.getElementById('no').onclick = () => renderBranch();
+    document.getElementById('no').onclick = () => {
+      document.getElementById('man').style.display = 'block';
+      document.getElementById('ll').focus();
+    };
     document.getElementById('yes').onclick = async (ev) => {
       ev.target.disabled = true; ev.target.textContent = 'กำลังสร้างชีต...';
-      try{ const r = await api('p_registerBranch', { name: document.getElementById('bn').value.trim(), lat:found.lat, lng:found.lng, mapsUrl:found.mapsUrl });
+      try{ const r = await api('p_registerBranch', { name: val('bn'), lat:found.lat, lng:found.lng, mapsUrl:found.mapsUrl, source:found.source });
         HOME.branches.push({ name:r.name, sheetUrl:r.sheetUrl, lastWalked:'' });   // โชว์สาขาใหม่ทันที ไม่ต้องโหลดใหม่
         renderBranch(null, r); }
       catch(e){ ev.target.disabled = false; ev.target.textContent = 'ใช่ ลงทะเบียน'; m(e.message); }
