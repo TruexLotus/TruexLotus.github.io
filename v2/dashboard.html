@@ -156,7 +156,7 @@ tr:last-child td{border-bottom:none;}
     <!-- ============ ภาพรวม ============ -->
     <section id="p-overview" class="active">
       <div class="kpis">
-        <div class="kpi"><div class="lbl">Lead ทั้งหมด</div><div class="val" id="o-total">0</div></div>
+        <div class="kpi"><div class="lbl">Lead ทั้งหมด <span id="o-split" style="font-size:10.5px;"></span></div><div class="val" id="o-total">0</div></div>
         <div class="kpi green">
           <div class="lbl">ปิดเน็ตทรูได้ทั้งหมด <span style="font-size:10.5px;">· ที่ PBH กรอก</span></div>
           <div class="val" id="o-true">0 <span class="unit">ราย</span></div>
@@ -222,7 +222,7 @@ tr:last-child td{border-bottom:none;}
     <!-- ============ ทีม Lotus's ============ -->
     <section id="p-lotus">
       <div class="kpis">
-        <div class="kpi"><div class="lbl">Lead ที่ส่งให้โลตัส</div><div class="val" id="l-total">0 <span class="unit">ราย</span></div></div>
+        <div class="kpi"><div class="lbl">Lead B2B ที่ส่งให้โลตัส</div><div class="val" id="l-total">0 <span class="unit">ราย</span></div></div>
         <div class="kpi green"><div class="lbl">อัตราปิดได้ <span style="font-size:10.5px;">· จากที่อัปเดตแล้ว</span></div><div class="val" id="l-rate">0%</div></div>
         <div class="kpi green"><div class="lbl">ปิดได้</div><div class="val" id="l-closed">0 <span class="unit">ราย</span></div></div>
         <div class="kpi"><div class="lbl">ปิดไม่ได้</div><div class="val" id="l-lost">0 <span class="unit">ราย</span></div></div>
@@ -264,7 +264,10 @@ const WEEK_COLORS = ['#378ADD','#1D9E75','#D85A30','#8B5CF6','#0E9BA8','#C2185B'
 const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 // ดัชนีของ rows ที่ backend ส่งมา
-const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6;
+const C_WEEK=0, C_BRANCH=1, C_SALE=2, C_STATUS=3, C_TRUE=4, C_BASKET=5, C_AGE=6, C_TYPE=7;
+// O2O (MyLotus's) จบที่หน้างาน ไม่มีทีมโลตัสตามต่อ จึงไม่นับในตัวเลขฝั่งโลตัส
+const isO2O = r => r[C_TYPE] === 'O2O';
+const b2bOnly = rows => rows.filter(r => !isO2O(r));
 // ยอดที่ PBH กรอก: [สัปดาห์, พื้นที่, ปิดได้, รอตัดสินใจ, เซลที่ออกเดิน]
 const R_WEEK=0, R_AREA=1, R_CLOSED=2, R_WAIT=3, R_SALES=4;
 
@@ -396,7 +399,7 @@ function render(){
 
   renderOverview(rows, weeks, wkColor);
   renderTrue(rows, weeks, wkColor);
-  renderLotus(rows);
+  renderLotus(b2bOnly(rows));
 
   const d = new Date(DATA.generatedAt);
   document.getElementById('updated').textContent =
@@ -408,12 +411,15 @@ function render(){
 // ---------- หน้า 1 ----------
 function renderOverview(rows, weeks, wkColor){
   set('o-total', rows.length.toLocaleString());
+  const nO2O = count(rows, isO2O);
+  set('o-split', '· B2B ' + (rows.length - nO2O).toLocaleString() + ' · O2O ' + nO2O.toLocaleString());
   // ยอดปิดเน็ตทรูรวม = จากระบบ + ยอดนอกพื้นที่ + ปิดได้จากลูกค้ารอตัดสินใจ
   // สองก้อนหลังเป็นตัวเลขกรอกมือจากชีต แยกรายละเอียดดูได้ในหน้าทีมทรู
   setNum('o-true', trueClosedTotal(rows), 'ราย');
-  setNum('o-closed', count(rows, r=>isClosed(r[C_STATUS])), 'ราย');
-  setNum('o-basket', count(rows, r=>isPending(r[C_STATUS])), 'ราย');
-  setNum('o-sla', count(rows, isSla), 'ราย');
+  const b2b = b2bOnly(rows);
+  setNum('o-closed', count(b2b, r=>isClosed(r[C_STATUS])), 'ราย');
+  setNum('o-basket', count(b2b, r=>isPending(r[C_STATUS])), 'ราย');
+  setNum('o-sla', count(b2b, isSla), 'ราย');
 
   // กราฟรายสัปดาห์
   const byWeek = {}; weeks.forEach(w=>byWeek[w]=0);
@@ -584,7 +590,7 @@ function trueClosedTotal(rows){
   return filteredReports().reduce((a,x)=>a+x[R_CLOSED],0);
 }
 
-function isSla(r){ return isPending(r[C_STATUS]) && r[C_AGE] > SLA_DAYS; }
+function isSla(r){ return !isO2O(r) && isPending(r[C_STATUS]) && r[C_AGE] > SLA_DAYS; }
 function count(rows, fn){ return rows.filter(fn).length; }
 function sum(rows, fn){ return rows.reduce((s,r)=>s+(fn(r)||0),0); }
 function set(id, v){ document.getElementById(id).textContent = v; }

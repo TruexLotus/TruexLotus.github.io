@@ -158,6 +158,35 @@
   .view{display:none;}
   .view.active{display:block;}
 
+  /* ---------- เลือกแบบที่เดินวันนี้ ---------- */
+  :root{ --o2o:#0A84C6; --o2o-bg:#E6F3FB; }
+  .mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .mode-opt{
+    text-align:left; padding:14px 13px; border-radius:14px; border:2px solid var(--line); background:#fff;
+    font-family:inherit; color:var(--ink); cursor:pointer;
+  }
+  .mode-opt .tag{display:inline-block; font-family:'Kanit'; font-weight:700; font-size:13px; color:#fff; padding:2px 10px; border-radius:20px;}
+  .mode-opt .nm{font-family:'Kanit'; font-weight:600; font-size:16px; margin:8px 0 4px;}
+  .mode-opt .ds{font-size:12px; color:var(--muted); line-height:1.45;}
+  .mode-opt.b2b .tag{background:var(--true-red);}
+  .mode-opt.o2o .tag{background:var(--o2o);}
+  .mode-opt.b2b:active{border-color:var(--true-red);} .mode-opt.o2o:active{border-color:var(--o2o);}
+  .mode-now{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 13px; border-radius:12px;}
+  .mode-now .big{font-family:'Kanit'; font-weight:700; font-size:16px;}
+  .mode-now .sm{font-size:12px; margin-top:2px;}
+  body.m-b2b .mode-now{background:#FDECEF; color:var(--true-red-dark);}
+  body.m-o2o .mode-now{background:var(--o2o-bg); color:#075E8D;}
+  .hdr-mode{display:none; background:#fff; font-family:'Kanit'; font-weight:700; font-size:12px; padding:3px 10px; border-radius:20px;}
+  body.m-b2b .hdr-mode{display:inline-block; color:var(--true-red);}
+  body.m-o2o .hdr-mode{display:inline-block; color:var(--o2o);}
+  body.m-o2o header.top{background:linear-gradient(135deg,#0A84C6 0%, #065C8C 100%); box-shadow:0 4px 14px rgba(6,92,140,0.25);}
+  body.m-o2o .btn-red{background:var(--o2o);}
+  body.m-o2o input:focus{border-color:var(--o2o);}
+  body.m-o2o .b2b-only{display:none;}
+  .form-note{font-size:12px; padding:9px 11px; border-radius:10px; margin-bottom:12px; display:none;}
+  body.m-o2o .form-note.o2o{display:block; background:var(--o2o-bg); color:#075E8D;}
+  body.m-b2b .form-note.b2b{display:block; background:#FDECEF; color:var(--true-red-dark);}
+
   .toast{
     position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
     background:var(--ink); color:#fff; padding:11px 18px; border-radius:30px; font-size:13.5px;
@@ -171,6 +200,7 @@
 <header class="top">
   <div class="brandrow">
     <div class="brandmark">true <span class="x">×</span> <span class="lotus-chip">Lotus's</span></div>
+    <span class="hdr-mode" id="hdr-mode"></span>
   </div>
   <h1>เก็บ Lead หน้าร้าน</h1>
 </header>
@@ -200,22 +230,51 @@
       </div>
     </div>
 
+    <div class="card" id="mode-card">
+      <div class="section-label">วันนี้เดินแบบไหน</div>
+      <div id="mode-pick">
+        <div class="mode-grid">
+          <button type="button" class="mode-opt b2b" onclick="setMode('B2B')">
+            <span class="tag">B2B</span>
+            <div class="nm">Lotus's B2B</div>
+            <div class="ds">ชวนสมัครสมาชิกผู้ประกอบการ<br>กรอกข้อมูลเต็ม · ทีมโลตัสโทรกลับ</div>
+          </button>
+          <button type="button" class="mode-opt o2o" onclick="setMode('O2O')">
+            <span class="tag">O2O</span>
+            <div class="nm">MyLotus's</div>
+            <div class="ds">ชวนสมัครแอป MyLotus's<br>กรอกแค่ชื่อร้าน + ชื่อเจ้าของ</div>
+          </button>
+        </div>
+        <div class="hint" style="margin-top:9px;">เลือกตามที่ PBH แจ้งตอนบรีฟ · เดิน 1 ครั้ง = 1 แบบ</div>
+      </div>
+      <div id="mode-current" style="display:none;">
+        <div class="mode-now">
+          <div><div class="big" id="mode-big"></div><div class="sm" id="mode-sm"></div></div>
+          <button class="btn btn-outline" type="button" onclick="changeMode()" style="width:auto; padding:7px 12px; font-size:12.5px;">เปลี่ยนแบบ</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lead-form" style="display:none;">
     <div class="card">
-      <div class="section-label">ข้อมูลลูกค้า</div>
-
-      <div class="field">
-        <label class="field-label">ชื่อลูกค้า</label>
-        <input type="text" id="f-name" placeholder="เช่น พี่สมศรี">
-      </div>
-
-      <div class="field">
-        <label class="field-label">เบอร์โทร</label>
-        <input type="tel" id="f-phone" placeholder="08X-XXX-XXXX" maxlength="10">
-      </div>
+      <div class="section-label" id="form-label">ข้อมูลร้าน</div>
+      <div class="form-note b2b">B2B: กรอกให้ครบ เบอร์ต้องเป็นเบอร์ที่ทีมโลตัสโทรกลับได้จริง</div>
+      <div class="form-note o2o">O2O: ช่วยลูกค้าสมัครแอป MyLotus's ก่อน แล้วกรอกแค่ 2 ช่องนี้ + ปักหมุด</div>
 
       <div class="field">
         <label class="field-label">ชื่อร้านค้า</label>
         <input type="text" id="f-shop" placeholder="เช่น ร้านป้าหนู ของแห้ง">
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="f-name-label">ชื่อลูกค้า (ผู้ติดต่อ)</label>
+        <input type="text" id="f-name" placeholder="เช่น พี่สมศรี">
+      </div>
+
+      <div class="b2b-only">
+      <div class="field">
+        <label class="field-label">เบอร์โทร</label>
+        <input type="tel" id="f-phone" placeholder="08X-XXX-XXXX" maxlength="10">
       </div>
 
       <div class="field-row">
@@ -269,6 +328,7 @@
           <button data-v="ทันที" type="button">⚡ ทันที</button>
         </div>
       </div>
+      </div><!-- /b2b-only -->
     </div>
 
     <div class="card">
@@ -284,6 +344,7 @@
       <button class="btn btn-red" id="submit-btn" onclick="submitLead()">ส่ง Lead เข้าระบบ</button>
       <div id="outbox-status" style="display:none; margin-top:10px; padding:9px 12px; border-radius:10px; font-size:13px; text-align:center;"></div>
     </div>
+    </div><!-- /lead-form -->
   </section>
 
 </main>
@@ -602,9 +663,22 @@ async function submitLead(){
   const profile = getSaleProfile();
   if(!profile){ showToast('กรอกและยืนยันรหัสเซลก่อนนะ'); return; }
 
+  const mode = getMode();
+  if(!mode){ showToast('เลือกก่อนว่าวันนี้เดินแบบ B2B หรือ O2O'); return; }
+
   const name = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
   const shop = document.getElementById('f-shop').value.trim();
+
+  // ---------- O2O: แค่ชื่อร้าน + ชื่อเจ้าของ + ปักหมุด ----------
+  if(mode === 'O2O'){
+    if(!shop || !name){ showToast('กรอกชื่อร้านและชื่อเจ้าของร้านก่อนนะ'); return; }
+    if(!currentFix){ showToast('กดปักหมุดตำแหน่งก่อนส่ง Lead'); return; }
+    if(!nearestBranch){ showToast('ยืนยันสาขา Lotus\'s ก่อนส่ง Lead'); return; }
+    queueLead_({ leadType:'O2O', customerName:name, shopName:shop }, profile);
+    return;
+  }
+
+  const phone = document.getElementById('f-phone').value.trim();
   const shopType = pickValue_('f-shoptype');
   const channel = pickValue_('f-channel');
 
@@ -625,17 +699,15 @@ async function submitLead(){
   if(!currentFix){ showToast('กดปักหมุดตำแหน่งก่อนส่ง Lead'); return; }
   if(!nearestBranch){ showToast('ยืนยันสาขา Lotus\'s ก่อนส่ง Lead'); return; }
 
-  // สร้าง LeadID ที่เครื่อง ถ้าเน็ตหลุดแล้วส่งซ้ำ ระบบหลังบ้านจะรู้ว่าเป็นรายการเดียวกัน
-  const lead = {
+  queueLead_({ leadType:'B2B', customerName:name, phone:phone, shopName:shop, interest:interestStr,
+               shopType:shopType, orderChannel:channel, preferredTime:selectedTime }, profile);
+}
+
+// สร้าง LeadID ที่เครื่อง ถ้าเน็ตหลุดแล้วส่งซ้ำ ระบบหลังบ้านจะรู้ว่าเป็นรายการเดียวกัน
+function queueLead_(fields, profile){
+  const lead = Object.assign({
     leadId: 'LD' + Date.now() + Math.floor(Math.random() * 1000),
     capturedAt: new Date().toISOString(),
-    customerName: name,
-    phone: phone,
-    shopName: shop,
-    interest: interestStr,
-    shopType: shopType,
-    orderChannel: channel,
-    preferredTime: selectedTime,
     lat: currentFix.lat,
     lng: currentFix.lng,
     branchName: nearestBranch ? nearestBranch.name : 'ไม่ระบุสาขา',
@@ -643,15 +715,51 @@ async function submitLead(){
     salesName: profile.fullName,
     saleType: profile.saleType,
     saleRegion: profile.region
-  };
+  }, fields);
 
   // บันทึกลงคิวในเครื่องก่อน แล้วเคลียร์ฟอร์มทันที เซลไปร้านต่อไปได้เลยไม่ต้องรอ
   isSubmittingLead = true;
   outboxAdd_(lead);
   resetForm();
-  showToast('✅ บันทึก Lead แล้ว ไปร้านต่อไปได้เลย');
+  showToast('✅ บันทึก Lead ' + fields.leadType + ' แล้ว ไปร้านต่อไปได้เลย');
   setTimeout(() => { isSubmittingLead = false; }, 800);   // กันกดซ้ำรัวๆ
   flushOutbox_();
+}
+
+// ---------- แบบที่เดินวันนี้ (B2B / O2O) ----------
+// จำไว้เฉพาะวันนี้ พรุ่งนี้เปิดมาต้องเลือกใหม่ เพราะแต่ละครั้งที่เดินอาจคนละแบบ
+const MODE_KEY = 'lead_mode_v1';
+function todayKey_(){ const d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function getMode(){
+  try{ const m = JSON.parse(localStorage.getItem(MODE_KEY) || 'null'); return (m && m.day === todayKey_()) ? m.mode : ''; }
+  catch(e){ return ''; }
+}
+function setMode(mode){
+  localStorage.setItem(MODE_KEY, JSON.stringify({ mode: mode, day: todayKey_() }));
+  renderMode();
+  setTimeout(() => document.getElementById('f-shop').focus(), 150);
+}
+function changeMode(){
+  const now = getMode();
+  if(now && !confirm('วันนี้ตั้งไว้เป็น ' + now + ' อยู่\nเดิน 1 ครั้ง = 1 แบบ แน่ใจว่าจะเปลี่ยน?')) return;
+  localStorage.removeItem(MODE_KEY);
+  renderMode();
+}
+function renderMode(){
+  const mode = getMode();
+  document.body.classList.toggle('m-b2b', mode === 'B2B');
+  document.body.classList.toggle('m-o2o', mode === 'O2O');
+  document.getElementById('mode-pick').style.display = mode ? 'none' : 'block';
+  document.getElementById('mode-current').style.display = mode ? 'block' : 'none';
+  document.getElementById('lead-form').style.display = mode ? 'block' : 'none';
+  if(!mode) return;
+  const o2o = mode === 'O2O';
+  document.getElementById('hdr-mode').textContent = o2o ? "O2O · MyLotus's" : "B2B · Lotus's B2B";
+  document.getElementById('mode-big').textContent = o2o ? "O2O · MyLotus's" : "B2B · Lotus's B2B";
+  document.getElementById('mode-sm').textContent = o2o ? 'กรอกแค่ชื่อร้าน + ชื่อเจ้าของ' : 'กรอกเต็ม · ทีมโลตัสโทรกลับ';
+  document.getElementById('form-label').textContent = o2o ? 'ข้อมูลร้าน · O2O' : 'ข้อมูลร้าน · B2B';
+  document.getElementById('f-name-label').textContent = o2o ? 'ชื่อเจ้าของร้าน' : 'ชื่อลูกค้า (ผู้ติดต่อ)';
+  document.getElementById('submit-btn').textContent = o2o ? 'ส่ง Lead O2O' : 'ส่ง Lead B2B';
 }
 
 // ---------- คิวส่ง Lead (เก็บในเครื่องจนกว่าระบบจะรับ) ----------
@@ -788,6 +896,7 @@ async function refreshBranches_(){
 
 loadBranchesFromCache_();
 refreshBranches_();
+renderMode();   // เรียกท้ายสุด หลังประกาศค่าคงที่ครบแล้ว
 
 // ---------- Toast ----------
 let toastTimer;
