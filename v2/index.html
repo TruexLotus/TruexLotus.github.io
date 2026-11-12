@@ -259,7 +259,7 @@
     <div class="card">
       <div class="section-label" id="form-label">ข้อมูลร้าน</div>
       <div class="form-note b2b">B2B: กรอกให้ครบ เบอร์ต้องเป็นเบอร์ที่ทีมโลตัสโทรกลับได้จริง</div>
-      <div class="form-note o2o">O2O: ช่วยลูกค้าดาวน์โหลดแอป MyLotus's ก่อน แล้วกรอก 2 ช่องนี้ + ปักหมุด</div>
+      <div class="form-note o2o">ช่วยลูกค้าโหลดแอป Lotus's และสมัครมายโลตัสก่อน แล้วกรอกแค่ 2 ช่องนี้ + ปักหมุด</div>
 
       <div class="field">
         <label class="field-label">ชื่อร้านค้า</label>
@@ -729,8 +729,11 @@ function queueLead_(fields, profile){
 // ---------- แบบที่เดินวันนี้ (B2B / O2O) ----------
 // จำไว้เฉพาะวันนี้ พรุ่งนี้เปิดมาต้องเลือกใหม่ เพราะแต่ละครั้งที่เดินอาจคนละแบบ
 const MODE_KEY = 'lead_mode_v1';
+// ล็อกให้เดินแบบ O2O อย่างเดียว (POC 5 พื้นที่) · ถ้าจะเปิดให้เลือก B2B/O2O อีก ให้เปลี่ยนเป็น ''
+const FORCE_MODE = 'O2O';
 function todayKey_(){ const d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
 function getMode(){
+  if(FORCE_MODE) return FORCE_MODE;
   try{ const m = JSON.parse(localStorage.getItem(MODE_KEY) || 'null'); return (m && m.day === todayKey_()) ? m.mode : ''; }
   catch(e){ return ''; }
 }
@@ -752,6 +755,7 @@ function renderMode(){
   document.getElementById('mode-pick').style.display = mode ? 'none' : 'block';
   document.getElementById('mode-current').style.display = mode ? 'block' : 'none';
   document.getElementById('lead-form').style.display = mode ? 'block' : 'none';
+  document.getElementById('mode-card').style.display = FORCE_MODE ? 'none' : 'block';
   if(!mode) return;
   const o2o = mode === 'O2O';
   document.getElementById('hdr-mode').textContent = o2o ? "O2O · MyLotus's" : "B2B · Lotus's B2B";
