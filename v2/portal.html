@@ -210,6 +210,12 @@ function renderHome(){
     repLine = `<div class="step"><div class="dot ok">${ICON.ok}</div><div><div class="h">กรอกยอดแล้ว · ปิดทรู ${w.report.trueClosed}</div></div></div>`;
   }
   const done = (p ? 1 : 0) + (repDone ? 1 : 0), total = 1 + (needRep ? 1 : 0);
+  const bl = h.backlog || [];
+  const backCard = bl.length ? `<div class="card" style="background:var(--amber-bg)">
+      <div class="h" style="color:var(--amber)">ลืมกรอกยอด ${bl.length} วันเดิน</div>
+      <div class="mut" style="margin:4px 0 10px">กรอกย้อนหลังได้เลย</div>
+      <div style="display:grid;gap:8px">${bl.map(d => `<button class="btn ghost sm" onclick="renderReport('${d}', true)">กรอกยอดย้อนหลัง · เดิน${thDay(d)}</button>`).join('')}</div>
+    </div>` : '';
   const np = h.nextWeek.plan;
   $app.innerHTML = `
   <div class="hdr">
@@ -223,6 +229,7 @@ function renderHome(){
       ${planLine}${repLine}
       ${np ? `<div class="mut" style="margin-top:12px">สัปดาห์หน้า: ${np.type === 'skip' ? 'ขอข้าม' : 'นัดเดิน ' + thDay(np.walkDate)}</div>` : ''}
     </div>
+    ${backCard}
     <div class="grid3">
       <button class="tile" onclick="renderPlan()">${ICON.cal}<span>แผนเดิน /<br>ขอข้าม</span></button>
       <button class="tile" onclick="renderReport()">${ICON.pen}<span>กรอกยอด</span></button>
@@ -312,35 +319,38 @@ function renderPlan(which){
 }
 
 // ---------- กรอกยอด ----------
-function renderReport(pickDate){
-  const h = HOME, rt = h.reportTarget;
-  let date = rt.planned ? rt.date : (pickDate || '');
-  if(!rt.planned && !date){
+function renderReport(pickDate, back){
+  const h = HOME, rt = h.reportTarget, bl = h.backlog || [];
+  let date = back ? pickDate : rt.planned ? rt.date : (pickDate || '');
+  if(!back && !rt.planned && !date){
     // ไม่มีแผนเดินที่อยู่ในช่วงกรอก ให้เลือกว่าเดินวันนี้หรือเมื่อวาน
     $app.innerHTML = bar('กรอกยอด', '') + `<div class="wrap">
       <div class="card ice"><div class="h">ไม่มีวันเดินที่อยู่ในช่วงกรอกยอด</div>
         <div class="mut" style="margin-top:6px">กรอกยอดได้ตั้งแต่วันเดินจนถึงวันถัดไป ถ้าวันนี้หรือเมื่อวานเดินจริงแต่ไม่ได้กดแผนไว้ เลือกวันด้านล่าง</div></div>
       ${rt.choices.map(d => `<button class="btn ghost sm" onclick="renderReport('${d}')">เดิน${thDay(d)}${rt.reports[d] ? ' · กรอกแล้ว' : ''}</button>`).join('')}
+      ${bl.length ? `<div class="mut" style="margin-top:6px">ลืมกรอกยอด กรอกย้อนหลังได้</div>` + bl.map(d => `<button class="btn ghost sm" onclick="renderReport('${d}', true)">กรอกยอดย้อนหลัง · เดิน${thDay(d)}</button>`).join('') : ''}
     </div>`;
     return;
   }
-  const r = (rt.planned ? rt.report : rt.reports[date]) || { salesOut:0, trueClosed:0, trueDeciding:0, note:'' };
+  const cur = back ? null : (rt.planned ? rt.report : rt.reports[date]);
+  const r = cur || { salesOut:0, trueClosed:0, trueDeciding:0, note:'' };
   const v = { salesOut:r.salesOut, trueClosed:r.trueClosed, trueDeciding:r.trueDeciding };
   const F = [['salesOut','เซลที่ออกเดิน',''],['trueClosed','ปิดเน็ตทรูได้ (Sub)','var(--red)'],['trueDeciding','รอตัดสินใจเน็ตทรู','']];
   const leads = (h.leadsByDate || {})[date] || 0;
-  $app.innerHTML = bar('กรอกยอด · ' + thDay(date), 'กรอกได้ถึง ' + thDay(addK(date,1)) + ' (1 วันหลังเดิน)', true) + `
+  $app.innerHTML = bar('กรอกยอด · ' + thDay(date), back ? 'กรอกย้อนหลัง (ลืมกรอก)' : 'กรอกได้ถึง ' + thDay(addK(date,1)) + ' (1 วันหลังเดิน)', true) + `
   <div class="wrap">
-    ${rt.planned ? '' : '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">วันนี้ไม่ได้อยู่ในแผนเดิน ถ้าเดินจริงกรอกยอดได้ตามปกติ</div>'}
+    ${back ? '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">วันเดินนี้เลยช่วงกรอกปกติแล้ว กรอกย้อนหลังได้เลย</div>'
+      : rt.planned ? '' : '<div class="msg" style="background:var(--amber-bg);color:var(--amber)">วันนี้ไม่ได้อยู่ในแผนเดิน ถ้าเดินจริงกรอกยอดได้ตามปกติ</div>'}
     <div class="card ice row"><div><div class="mut">Lead โลตัสที่เข้าระบบวันนั้น</div><div class="mut" style="font-size:12px">ดึงอัตโนมัติ ไม่ต้องกรอก</div></div>
       <b style="font-size:28px">${leads}</b></div>
     <div class="list">${F.map(([k,l,c]) => `<div class="li" style="justify-content:space-between">
       <span style="font-size:15px;font-weight:${c?600:500};color:${c||'inherit'}">${l}</span>
       <div class="stepper"><button aria-label="ลด" data-k="${k}" data-d="-1">−</button><b id="v_${k}" style="color:${c||'inherit'}">${v[k]}</b><button aria-label="เพิ่ม" data-k="${k}" data-d="1">+</button></div></div>`).join('')}</div>
     <div><label class="f" for="note">หมายเหตุ (ไม่บังคับ)</label><textarea id="note" class="t">${esc(r.note)}</textarea></div>
-    <div class="mut">ส่งแล้วกลับมาแก้ได้จนถึง ${thDay(addK(date,1))} ถ้ามีเซลปิดได้เพิ่มทีหลัง</div>
+    ${back ? '' : `<div class="mut">ส่งแล้วกลับมาแก้ได้จนถึง ${thDay(addK(date,1))} ถ้ามีเซลปิดได้เพิ่มทีหลัง</div>`}
     <div id="m"></div>
   </div>
-  <div class="foot"><button class="btn" id="save">${(rt.planned ? rt.report : rt.reports[date]) ? 'บันทึกการแก้ไข' : 'ส่งยอด'}</button></div>`;
+  <div class="foot"><button class="btn" id="save">${cur ? 'บันทึกการแก้ไข' : 'ส่งยอด'}</button></div>`;
   document.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
     const k = b.dataset.k; v[k] = Math.max(0, v[k] + Number(b.dataset.d)); document.getElementById('v_' + k).textContent = v[k]; });
   document.getElementById('save').onclick = async (ev) => {
